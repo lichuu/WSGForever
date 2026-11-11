@@ -4,7 +4,7 @@
 ## Author: lichuu
 ## Version: 0.1.0
 ## SavedVariables: FlagCarriersDB
-## IconTexture: 132486
+## IconTexture: Interface\AddOns\FlagCarriers\icon
 
 Core.lua
 Callouts.lua
