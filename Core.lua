@@ -364,7 +364,13 @@ events:SetScript("OnEvent", function(_, event, arg1)
             end
         end
     elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
-        if GK.db then GK.Refresh() end
+        if GK.db then
+            GK.Refresh()
+            -- The game can be slow to say which battleground this is; look
+            -- again so nothing stays hidden for the whole match.
+            C_Timer.After(2, GK.Refresh)
+            C_Timer.After(6, GK.Refresh)
+        end
     end
 end)
 

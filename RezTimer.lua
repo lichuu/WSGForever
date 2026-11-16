@@ -13,7 +13,11 @@ local START_OFFSET = {
 local Rez = {}
 GK.RegisterModule("RezTimer", Rez)
 
-local nextRez, lastAlive, lastTotal
+local nextRez, lastTotal
+-- Fewest teammates alive in the last moment, and when that was noted. A wave
+-- is a jump up from it; teammates in one wave can pop up a tick or two apart.
+local lowAlive, lowAt
+local WAVE_WINDOW = 1.5
 -- Enemy deaths on the scoreboard, total and at the last wave. The difference
 -- is how many enemies will come back at the next wave.
 local enemyDeaths, enemyDeathsAtWave = 0, 0
@@ -70,8 +74,20 @@ local function Threshold()
     return GK.db.wsgRezThreshold
 end
 
+-- Spirit healers work the same in every battleground.
 local function Active()
-    return GK.InWSG() or GK.InAV()
+    return GK.InBattleground()
+end
+
+-- Seconds from a "battle has begun" message to the first wave, or nil if
+-- the message isn't one.
+local function StartOffset(msg)
+    if type(msg) ~= "string" then return nil end
+    if START_OFFSET[msg] then return START_OFFSET[msg] end
+    local lower = msg:lower()
+    if lower:find("battle") and (lower:find("begin!") or lower:find("begun")) then
+        return GK.InWSG() and 5 or 0
+    end
 end
 
 function Rez:SendSync()
@@ -101,18 +117,23 @@ function Rez:Init()
     f:RegisterEvent("PLAYER_UNGHOST")
     f:SetScript("OnEvent", GK.Safe("RezTimer event", function(_, event, a1, a2, _, a4)
         if event == "ZONE_CHANGED_NEW_AREA" then
-            nextRez, lastAlive, lastTotal = nil, nil, nil
+            nextRez, lastTotal, lowAlive, lowAt = nil, nil, nil, nil
             enemyDeaths, enemyDeathsAtWave = 0, 0
         elseif event == "UPDATE_BATTLEFIELD_SCORE" then
             if Active() then CountEnemyDeaths() end
         elseif event == "PLAYER_UNGHOST" then
-            -- Coming back at full health means the spirit healer just rezzed us.
-            if Active() and GK.HealthFraction("player") == 1 then
-                Wave(GetTime())
-                GK.SendAddon(PREFIX, string.format("%.1f", GK.db.rezInterval))
+            -- Coming back at full health means the spirit healer just rezzed
+            -- us. Health can lag the event, so look a moment later.
+            local at = GetTime()
+            if Active() then
+                C_Timer.After(0.3, function()
+                    if GK.HealthFraction("player") ~= 1 then return end
+                    Wave(at)
+                    GK.SendAddon(PREFIX, string.format("%.1f", nextRez - GetTime()))
+                end)
             end
         elseif event == "CHAT_MSG_BG_SYSTEM_NEUTRAL" then
-            local offset = START_OFFSET[GK.Plain(a1) or ""]
+            local offset = Active() and StartOffset(GK.Plain(a1))
             if offset then nextRez = GetTime() + GK.db.rezInterval + offset end
         elseif event == "CHAT_MSG_ADDON" and GK.Plain(a1) == PREFIX then
             local remaining = tonumber(GK.Plain(a2) or "")
@@ -135,10 +156,13 @@ function Rez:Init()
 
         local alive, total = GroupAlive()
         if alive then
-            if lastAlive and total == lastTotal and alive >= lastAlive + Threshold() then
+            if total ~= lastTotal or not lowAlive or alive < lowAlive or now - lowAt > WAVE_WINDOW then
+                lowAlive, lowAt = alive, now
+            elseif alive >= lowAlive + Threshold() then
                 Wave(now)
+                lowAlive, lowAt = alive, now
             end
-            lastAlive, lastTotal = alive, total
+            lastTotal = total
         end
 
         if nextRez then

@@ -58,6 +58,16 @@ local function CarrierUnit(wantEnemy)
     return nil, unsure
 end
 
+-- How many carrier slots are filled right now.
+local function FilledSlots()
+    local n = 0
+    for i = 1, 2 do
+        if GK.Plain(UnitExists("arena" .. i)) then n = n + 1 end
+    end
+    return n
+end
+local lastFilled = 0
+
 function GK.EnemyCarrierUnit() return (CarrierUnit(true)) end
 local function FriendlyCarrierUnit() return (CarrierUnit(false)) end
 
@@ -163,7 +173,8 @@ end
 -- Keeps each flag's carrier in sync with the game's carrier slots. In
 -- battlegrounds the flag messages can reach addons hidden, so the slots are
 -- the reliable source. Returns true if a carrier changed.
-local function SyncFromSlots(flag, now)
+-- slotLost: a carrier slot emptied since the last look.
+local function SyncFromSlots(flag, now, slotLost)
     local s = state[flag]
     local unit, unsure = CarrierUnit(flag == OurFlag())
     local changed = false
@@ -181,11 +192,14 @@ local function SyncFromSlots(flag, now)
         s.unit, s.fromSlot = unit, true
         s.droppedAt, s.lostAt = nil, nil
     elseif s.fromSlot and not unsure then
-        -- Slot emptied: the flag was dropped or captured. Unless a capture
-        -- was just seen, wait a moment for one (OnCapture clears lostAt)
-        -- before calling it a drop.
+        -- No carrier for this flag any more. If no slot emptied, the game
+        -- only changed its mind about which side a carrier is on (it can
+        -- misreport a carrier who just picked up), so nothing was dropped.
+        -- Otherwise the flag was dropped or captured: unless a capture was
+        -- just seen, wait a moment for one (OnCapture clears lostAt) before
+        -- calling it a drop.
         s.holder, s.unit, s.fromSlot = nil, nil, nil
-        if not (capturedAt and now - capturedAt < 3) then s.lostAt = now end
+        if slotLost and not (capturedAt and now - capturedAt < 3) then s.lostAt = now end
         changed = true
     end
     if s.lostAt and now - s.lostAt > 1 then
@@ -372,7 +386,7 @@ local function MakeLowBanner()
     text:SetPoint("LEFT", skull, "RIGHT", 8, 0)
     text:SetTextColor(1, 0.4, 0.35)
     text:SetText("ENEMY FC LOW")
-    GK.MakeMovable(f, "EFC low alert", { "TOP", "TOP", 0, -140 })
+    GK.MakeMovable(f, "EFC low alert", { "TOP", "TOP", 0, -174 })
     lowBanner = f
 end
 
@@ -394,7 +408,8 @@ local function UpdateLowBanner(unit)
 end
 
 -- Flag spawn countdown ------------------------------------------------------
--- One line for both flags, by default just under the EFC LOW banner.
+-- One line for both flags, by default between the rez timer and the EFC
+-- LOW banner.
 
 local spawnFrame
 local SPAWN_TEXT = "|cff4fff4fFlags spawn in %d|r"
@@ -406,7 +421,7 @@ local function MakeSpawnFrame()
     f.text = f:CreateFontString(nil, "OVERLAY")
     f.text:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
     f.text:SetPoint("CENTER")
-    GK.MakeMovable(f, "Flag spawn", { "TOP", "TOP", 0, -176 })
+    GK.MakeMovable(f, "Flag spawn", { "TOP", "TOP", 0, -146 })
     spawnFrame = f
 end
 
@@ -533,8 +548,11 @@ function FC:Init()
             WatchCaptures(now)
             UpdateSpawnFrame(now)
         end
-        local changedA = SyncFromSlots("Alliance", now)
-        local changedH = SyncFromSlots("Horde", now)
+        local filled = FilledSlots()
+        local slotLost = filled < lastFilled
+        lastFilled = filled
+        local changedA = SyncFromSlots("Alliance", now, slotLost)
+        local changedH = SyncFromSlots("Horde", now, slotLost)
         if changedA or changedH then ApplyMacros() end
         UpdateFlag("Alliance", units)
         UpdateFlag("Horde", units)
