@@ -393,6 +393,32 @@ local function UpdateLowBanner(unit)
     if not ok then lowBanner:SetValue(0) end
 end
 
+-- Flag spawn countdown ------------------------------------------------------
+-- One line for both flags, by default just under the EFC LOW banner.
+
+local spawnFrame
+local SPAWN_TEXT = "|cff4fff4fFlags spawn in %d|r"
+
+local function MakeSpawnFrame()
+    local f = CreateFrame("Frame", "WSGForeverFlagSpawn", UIParent)
+    f:SetSize(190, 24)
+    f:SetFrameStrata("LOW") -- under bags and other windows
+    f.text = f:CreateFontString(nil, "OVERLAY")
+    f.text:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
+    f.text:SetPoint("CENTER")
+    GK.MakeMovable(f, "Flag spawn", { "TOP", "TOP", 0, -176 })
+    spawnFrame = f
+end
+
+local function UpdateSpawnFrame(now)
+    local left = spawnAt and (spawnAt - now)
+    if left and left > 0 then
+        spawnFrame.text:SetFormattedText(SPAWN_TEXT, math.ceil(left))
+    else
+        spawnFrame.text:SetText("")
+    end
+end
+
 -- Per-tick update ------------------------------------------------------------
 
 local function UpdateFlag(flag, units)
@@ -404,14 +430,9 @@ local function UpdateFlag(flag, units)
         b.text:SetText("")
         local now = GetTime()
         local left = s.droppedAt and (s.droppedAt + DROP_RETURN - now)
-        local spawn = spawnAt and (spawnAt - now)
         if left and left > 0 then
             PlaceLabel(flag, nil)
             label:SetText(string.format("|cffffd100Dropped - returns in %d|r", math.ceil(left)))
-        elseif spawn and spawn > 0 then
-            s.droppedAt = nil
-            PlaceLabel(flag, nil)
-            label:SetText(string.format("|cff4fff4fSpawns in %d|r", math.ceil(spawn)))
         else
             s.droppedAt = nil
             label:SetText("")
@@ -477,6 +498,7 @@ function FC:Init()
     labels.Alliance = MakeLabel()
     labels.Horde = MakeLabel()
     MakeLowBanner()
+    MakeSpawnFrame()
 
     local f = CreateFrame("Frame")
     f:RegisterEvent("CHAT_MSG_BG_SYSTEM_ALLIANCE")
@@ -507,7 +529,10 @@ function FC:Init()
         local units = GK.VisibleUnits()
         local now = GetTime()
         if spawnAt and now >= spawnAt then spawnAt = nil end
-        if GK.InWSG() then WatchCaptures(now) end
+        if GK.InWSG() then
+            WatchCaptures(now)
+            UpdateSpawnFrame(now)
+        end
         local changedA = SyncFromSlots("Alliance", now)
         local changedH = SyncFromSlots("Horde", now)
         if changedA or changedH then ApplyMacros() end
@@ -555,6 +580,11 @@ function FC:Refresh()
         labels[flag]:SetHeight(16 * scale)
         buttons[flag].text:SetFont("Fonts\\FRIZQT__.TTF", 14 * scale, "OUTLINE")
         buttons[flag]:SetHeight(16 * scale)
+    end
+    spawnFrame:SetShown(GK.db.carriers and (inWSG or GK.ShouldShowAll()))
+    -- A sample while unlocked or testing so it can be placed.
+    if not inWSG then
+        spawnFrame.text:SetText(GK.ShouldShowAll() and SPAWN_TEXT:format(GK.db.flagRespawn) or "")
     end
     buttons.Alliance:SetShown(show and GK.db.fcNames)
     buttons.Horde:SetShown(show and GK.db.fcNames)

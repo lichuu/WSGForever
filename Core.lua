@@ -393,6 +393,7 @@ local scaleList = {
     { "lowalert", "EFC low alert" },
     { "blizzfc", "Carrier frames" },
     { "carriers", "Carrier text" },
+    { "spawn", "Flag spawn" },
     { "fcicon", "Raid flag icon" },
 }
 
