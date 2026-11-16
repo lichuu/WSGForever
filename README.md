@@ -10,7 +10,7 @@ A Warsong Gulch addon for **WoW Forever** (interface 16001).
 - **Flag spawn timer**: countdown to the flags spawning again after a capture.
 - **EFC LOW banner**: a local alert when the enemy flag carrier is under 50% HP.
 - **Carrier frames**: moves Blizzard's carrier frames next to the flags.
-- **Enemy frames**: battleground enemy list with HP, mana, dead/alive, range, targeted-by count and a carrier highlight. Click a row to target.
+- **Enemy frames**: battleground enemy list with HP, mana, dead/alive, range, targeted-by count and a carrier highlight. Left click a row to target, right click to focus, middle click to ping Attack.
 - **Rez timer**: graveyard wave countdown in any battleground and how many enemies are waiting to rez.
 - **FC icon**: flag icon on your team's carrier in the raid frames.
 - **Auto assist**: gives everyone assist when you lead a battleground raid.
