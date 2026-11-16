@@ -21,6 +21,8 @@ Copy the `FlagCarriers` folder into `World of Warcraft/_forever_/Interface/AddOn
 - `/fc unlock` / `/fc lock`: move frames by dragging; scroll over a frame to resize it.
 - `/fc test`: preview everything outside a battleground.
 - `/fc reset`: reset positions and sizes.
+- `/fc scale`: list sizes; `/fc scale <name> <percent>` sets one (also covers the carrier text and raid flag icon, which can't be scrolled on).
+- `/fc spawn <seconds>`: how long the flags take to spawn after a capture (default 12).
 - `/fc <toggle>`: turn features on or off (`callouts`, `carriers`, `fcnames`, `blizzfc`, `lowalert`, `fcicon`, `rez`, `enemies`, `assist`).
 - `/fc`: shows help and the current on/off state of every toggle.
 

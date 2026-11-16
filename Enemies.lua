@@ -524,8 +524,10 @@ function Enemies:Init()
     line:SetHeight(2)
     line:SetTexture(FLAT)
     f.line = line
-    -- Sit above the objective tracker, which otherwise eats clicks on some rows.
-    f:SetFrameStrata("HIGH")
+    -- Under bags and other windows, but still above the objective tracker
+    -- (same layer, we sit higher in it), which otherwise eats clicks on rows.
+    f:SetFrameStrata("LOW")
+    f:SetFrameLevel(100)
     for i = 1, MAX_ROWS do rows[i] = MakeRow(f, i) end
     -- Default spot roughly where your BattleGroundEnemies frame was.
     GK.MakeMovable(f, "Enemies", { "TOPRIGHT", "TOPRIGHT", -150, -250 })

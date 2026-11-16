@@ -87,6 +87,7 @@ function Rez:Init()
 
     local f = CreateFrame("Frame", "FlagCarriersRezTimer", UIParent)
     f:SetSize(160, 36)
+    f:SetFrameStrata("LOW") -- under bags and other windows
     f.text = f:CreateFontString(nil, "OVERLAY")
     f.text:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
     f.text:SetPoint("CENTER")

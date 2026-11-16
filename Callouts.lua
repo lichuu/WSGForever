@@ -86,7 +86,7 @@ function Callouts:Init()
     local height = #rows * (SIZE + GAP) - GAP
     local f = CreateFrame("Frame", "FlagCarriersCallouts", UIParent)
     f:SetSize(width, height)
-    f:SetFrameStrata("HIGH")
+    f:SetFrameStrata("LOW")
     for r, row in ipairs(rows) do
         -- Centre short rows under the full ones.
         local offset = (width - (#row * (SIZE + GAP) - GAP)) / 2

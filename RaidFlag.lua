@@ -32,16 +32,18 @@ local function Update()
         icon:Hide()
         return
     end
+    -- Sit just above the raid frame, not above bags and other windows.
+    icon:SetFrameStrata(frame:GetFrameStrata())
+    icon:SetFrameLevel(frame:GetFrameLevel() + 10)
     icon:ClearAllPoints()
     icon:SetPoint("RIGHT", frame, "RIGHT", -2, 0)
-    icon:SetHeight(math.min(24, frame:GetHeight() - 4))
+    icon:SetHeight(math.min(24, frame:GetHeight() - 4) * GK.Scale("Raid flag icon"))
     icon:SetWidth(icon:GetHeight())
     icon:Show()
 end
 
 function RaidFlag:Init()
     icon = CreateFrame("Frame", nil, UIParent)
-    icon:SetFrameStrata("HIGH")
     local tex = icon:CreateTexture(nil, "OVERLAY")
     tex:SetAllPoints()
     -- The flag we're carrying is the enemy's: Alliance flag for Horde players.

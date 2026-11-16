@@ -17,6 +17,7 @@ local defaults = {
     efcLowAlert = true,
     raidFlag = true,
     rezTimer = true,
+    flagRespawn = 12, -- seconds until the flags spawn again after a capture
     rezInterval = 31.5,
     wsgRezThreshold = 2,
     avRezThreshold = 4,
@@ -285,6 +286,16 @@ function GK.ApplyScale(frame)
     if frame.gkOnScale then frame.gkOnScale(scale) end
 end
 
+-- Saved size for anything, movable or not (carrier text, raid flag icon).
+function GK.Scale(key)
+    local scale = GK.db.scales[key]
+    if scale then return scale end
+    for _, f in ipairs(movers) do
+        if f.gkKey == key then return f.gkDefaultScale or 1 end
+    end
+    return 1
+end
+
 function GK.RestorePosition(frame)
     local pos = GK.db.positions[frame.gkKey] or frame.gkDefault
     frame:ClearAllPoints()
@@ -374,11 +385,47 @@ local toggleList = {
 local toggles = { raidflag = "raidFlag" } -- old name still works
 for _, t in ipairs(toggleList) do toggles[t[1]] = t[2] end
 
+-- Everything with a size: { command name, key in db.scales }.
+local scaleList = {
+    { "callouts", "Callouts" },
+    { "enemies", "Enemies" },
+    { "rez", "RezTimer" },
+    { "lowalert", "EFC low alert" },
+    { "blizzfc", "Carrier frames" },
+    { "carriers", "Carrier text" },
+    { "fcicon", "Raid flag icon" },
+}
+
+local function SetScale(args)
+    local name, pct = args:match("^(%S+)%s+(%d+)%%?$")
+    local key
+    for _, s in ipairs(scaleList) do
+        if s[1] == name then key = s[2] end
+    end
+    if not key then
+        GK.Print("sizes (/fc scale <name> <percent>, 50-200):")
+        for _, s in ipairs(scaleList) do
+            print(string.format("  %-9s %d%%", s[1], GK.Scale(s[2]) * 100 + 0.5))
+        end
+        return
+    end
+    if InCombatLockdown() then GK.Print("Can't do that in combat.") return end
+    local scale = math.max(0.5, math.min(2, tonumber(pct) / 100))
+    GK.db.scales[key] = scale
+    for _, f in ipairs(movers) do
+        if f.gkKey == key then GK.ApplyScale(f) end
+    end
+    GK.Print(string.format("%s size %d%%", name, scale * 100 + 0.5))
+    GK.Refresh()
+end
+
 local function Help()
     GK.Print("commands:")
     print("  /fc unlock | lock  - move frames (scroll on them to resize)")
     print("  /fc test           - preview everything outside a battleground")
     print("  /fc reset          - reset frame positions and sizes")
+    print("  /fc scale          - list sizes; /fc scale <name> <percent> sets one")
+    print("  /fc spawn <secs>   - flag spawn delay after a capture (now " .. GK.db.flagRespawn .. ")")
     print("  /fc sync           - sync rez timer with your group")
     print("  Turn a feature on or off:")
     for _, t in ipairs(toggleList) do
@@ -390,7 +437,7 @@ end
 SLASH_FLAGCARRIERS1 = "/fc"
 SLASH_FLAGCARRIERS2 = "/flagcarriers"
 SlashCmdList.FLAGCARRIERS = function(input)
-    local cmd = (input or ""):lower():match("^%s*(%S*)")
+    local cmd, args = (input or ""):lower():match("^%s*(%S*)%s*(.-)%s*$")
     if cmd == "unlock" then
         GK.SetLocked(false)
         GK.Print("Unlocked. Drag the blue boxes to move them, scroll on them to resize. /fc lock when done.")
@@ -410,9 +457,17 @@ SlashCmdList.FLAGCARRIERS = function(input)
             f.gkHandle.label:SetText(f.gkKey)
         end
         GK.Refresh()
+    elseif cmd == "scale" then
+        SetScale(args)
+    elseif cmd == "spawn" then
+        local secs = tonumber(args)
+        if secs and secs > 0 and secs <= 60 then GK.db.flagRespawn = secs end
+        GK.Print("Flags spawn " .. GK.db.flagRespawn .. "s after a capture.")
     elseif cmd == "debug" then
-        local m = GK.modules.BlizzCarriers
-        if m then m:Debug() end
+        for _, name in ipairs({ "BlizzCarriers", "Carriers" }) do
+            local m = GK.modules[name]
+            if m and m.Debug then m:Debug() end
+        end
     elseif cmd == "sync" then
         local rez = GK.modules.RezTimer
         if rez then rez:SendSync() end
