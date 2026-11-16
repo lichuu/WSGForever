@@ -1,7 +1,7 @@
 local _, GK = ...
 
 -- A light BattleGroundEnemies: one row per enemy from the scoreboard.
--- Left click targets, right click focuses. HP and mana show when the enemy is
+-- Left click targets, right click focuses, middle click pings (Attack). HP and mana show when the enemy is
 -- visible on a nameplate, your target/focus/mouseover, or a raid member's target.
 -- Deaths come from the scoreboard, so dead/alive works even when unseen.
 
@@ -71,6 +71,7 @@ local function MakeRow(parent, i)
     b:RegisterForClicks("AnyUp", "AnyDown")
     b:SetAttribute("type1", "macro")
     b:SetAttribute("type2", "macro")
+    b:SetAttribute("type3", "macro")
 
     b.bg = b:CreateTexture(nil, "BACKGROUND")
     b.bg:SetAllPoints()
@@ -352,6 +353,7 @@ local function ApplyRoster(list)
             row.enemy = e
             row:SetAttribute("macrotext1", "/targetexact " .. e.name)
             row:SetAttribute("macrotext2", "/targetexact " .. e.name .. "\n/focus\n/targetlasttarget")
+            row:SetAttribute("macrotext3", "/targetexact " .. e.name .. "\n/ping [@target] attack\n/targetlasttarget")
             SetClassLook(row, e.classToken)
             SetFittedName(row.name, GK.ShortName(e.name))
             row.wasDead = nil

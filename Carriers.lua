@@ -255,16 +255,23 @@ local function ApplyMacros()
         if flag == OurFlag() then
             -- Enemy carrier: target the game's carrier slot directly, the way
             -- BattleGroundEnemies does. Works in combat and when the flag
-            -- changes hands, no name needed. Right click sets focus.
-            b:SetAttribute("unit", GK.EnemyCarrierUnit() or "arena1")
+            -- changes hands, no name needed. Right click sets focus, middle
+            -- click pings Attack.
+            local unit = GK.EnemyCarrierUnit() or "arena1"
+            b:SetAttribute("unit", unit)
             b:SetAttribute("type1", "target")
             b:SetAttribute("type2", "focus")
+            b:SetAttribute("type3", "macro")
+            b:SetAttribute("macrotext3", "/ping [@" .. unit .. "] attack")
         else
             -- Our own carrier: target by name.
             b:SetAttribute("unit", nil)
             b:SetAttribute("type1", "macro")
             b:SetAttribute("type2", "macro")
+            b:SetAttribute("type3", "macro")
             b:SetAttribute("macrotext", s.holder and ("/targetexact " .. s.holder) or "")
+            -- Middle click pings Assist on our carrier.
+            b:SetAttribute("macrotext3", s.holder and ("/targetexact " .. s.holder .. "\n/ping [@target] assist\n/targetlasttarget") or "")
         end
         b:SetWidth(math.max(1, b.text:GetStringWidth()))
     end
