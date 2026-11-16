@@ -2,7 +2,7 @@ local _, GK = ...
 
 -- Flag carriers in WSG:
 --  * HP % after Blizzard's carrier names at the top of the screen
---    (or FlagCarriers's own clickable names with /fc fcnames)
+--    (or WSGForever's own clickable names with /fc fcnames)
 --  * a countdown when a dropped flag will return to base
 --  * a countdown to the flags spawning again after a capture
 --  * an "EFC LOW" banner when the enemy carrier is under 50% HP
@@ -200,7 +200,7 @@ end
 local buttons = {}
 
 local function MakeButton(flag)
-    local b = CreateFrame("Button", "FlagCarriersFC" .. flag, UIParent, "SecureActionButtonTemplate")
+    local b = CreateFrame("Button", "WSGForeverFC" .. flag, UIParent, "SecureActionButtonTemplate")
     -- Above Blizzard's flag display, which otherwise catches the clicks.
     b:SetFrameStrata("HIGH")
     -- Fire on the same click edge as action buttons, like BattleGroundEnemies.
@@ -307,7 +307,7 @@ local function MakeLowBanner()
     end)
     if not ok then lowCurve = nil return end
 
-    local f = CreateFrame("StatusBar", "FlagCarriersEFCLow", UIParent)
+    local f = CreateFrame("StatusBar", "WSGForeverEFCLow", UIParent)
     f:SetSize(190, 30)
     f:SetFrameStrata("LOW")
     f:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
@@ -485,7 +485,7 @@ function FC:Init()
     f:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
     f:RegisterEvent("UPDATE_UI_WIDGET")
     f:RegisterEvent("ARENA_OPPONENT_UPDATE")
-    f:SetScript("OnEvent", GK.Safe("FlagCarriers event", function(_, event, ...)
+    f:SetScript("OnEvent", GK.Safe("Carriers event", function(_, event, ...)
         if not GK.InWSG() and not GK.testMode then return end
         if event == "UPDATE_BATTLEFIELD_SCORE" then
             RefreshClasses()
@@ -499,7 +499,7 @@ function FC:Init()
     end))
 
     local elapsed = 0
-    f:SetScript("OnUpdate", GK.Safe("FlagCarriers", function(_, dt)
+    f:SetScript("OnUpdate", GK.Safe("Carriers", function(_, dt)
         elapsed = elapsed + dt
         if elapsed < 0.2 then return end
         elapsed = 0

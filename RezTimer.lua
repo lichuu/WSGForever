@@ -4,7 +4,7 @@ local _, GK = ...
 -- life at once, a spirit healer wave just happened, so the next one is
 -- rezInterval seconds later.
 
-local PREFIX = "FlagCarriersRez"
+local PREFIX = "WSGForeverRez"
 local START_OFFSET = {
     ["Let the battle for Warsong Gulch begin!"] = 5,
     ["The battle for Alterac Valley has begun!"] = 0,
@@ -85,7 +85,7 @@ function Rez:Init()
         C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
     end
 
-    local f = CreateFrame("Frame", "FlagCarriersRezTimer", UIParent)
+    local f = CreateFrame("Frame", "WSGForeverRezTimer", UIParent)
     f:SetSize(160, 36)
     f:SetFrameStrata("LOW") -- under bags and other windows
     f.text = f:CreateFontString(nil, "OVERLAY")

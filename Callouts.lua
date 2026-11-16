@@ -84,7 +84,7 @@ end
 function Callouts:Init()
     local width = #rows[1] * (SIZE + GAP) - GAP
     local height = #rows * (SIZE + GAP) - GAP
-    local f = CreateFrame("Frame", "FlagCarriersCallouts", UIParent)
+    local f = CreateFrame("Frame", "WSGForeverCallouts", UIParent)
     f:SetSize(width, height)
     f:SetFrameStrata("LOW")
     for r, row in ipairs(rows) do

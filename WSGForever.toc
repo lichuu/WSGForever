@@ -1,10 +1,10 @@
 ## Interface: 16001
-## Title: FlagCarriers
+## Title: WSGForever
 ## Notes: Warsong Gulch callouts, flag carrier tracker, rez timer, auto-assist and enemy frames.
 ## Author: lichuu
 ## Version: 0.1.0
-## SavedVariables: FlagCarriersDB
-## IconTexture: Interface\AddOns\FlagCarriers\icon
+## SavedVariables: WSGForeverDB
+## IconTexture: Interface\AddOns\WSGForever\icon
 
 Core.lua
 Callouts.lua

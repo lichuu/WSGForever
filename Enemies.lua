@@ -66,7 +66,7 @@ local function AddBorder(frame, layer, r, g, b, a, inset)
 end
 
 local function MakeRow(parent, i)
-    local b = CreateFrame("Button", "FlagCarriersEnemy" .. i, parent, "SecureActionButtonTemplate")
+    local b = CreateFrame("Button", "WSGForeverEnemy" .. i, parent, "SecureActionButtonTemplate")
     b:SetSize(ROW_W, ROW_H)
     b:RegisterForClicks("AnyUp", "AnyDown")
     b:SetAttribute("type1", "macro")
@@ -506,7 +506,7 @@ local function UpdateHealth()
 end
 
 function Enemies:Init()
-    local f = CreateFrame("Frame", "FlagCarriersEnemies", UIParent)
+    local f = CreateFrame("Frame", "WSGForeverEnemies", UIParent)
     f:SetSize(ROW_W, HEADER_H + MAX_ROWS * (ROW_H + GAP))
 
     -- Header: faction name, alive count, and an accent line.

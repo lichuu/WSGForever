@@ -1,5 +1,5 @@
 local ADDON, GK = ...
-_G.FlagCarriers = GK
+_G.WSGForever = GK
 
 GK.modules = {}
 GK.testMode = false
@@ -40,7 +40,7 @@ function GK.Plain(v)
 end
 
 function GK.Print(...)
-    print("|cff61f7ffFlagCarriers|r:", ...)
+    print("|cff61f7ffWSGForever|r:", ...)
 end
 
 local WSG_IDS = { [489] = true, [2106] = true }
@@ -340,11 +340,11 @@ events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON then
-        FlagCarriersDB = FlagCarriersDB or {}
+        WSGForeverDB = WSGForeverDB or {}
         for k, v in pairs(defaults) do
-            if FlagCarriersDB[k] == nil then FlagCarriersDB[k] = (type(v) == "table") and {} or v end
+            if WSGForeverDB[k] == nil then WSGForeverDB[k] = (type(v) == "table") and {} or v end
         end
-        GK.db = FlagCarriersDB
+        GK.db = WSGForeverDB
         -- Older settings kept two sizes separately.
         if GK.db.enemyScale ~= 1 and not GK.db.scales.Enemies then GK.db.scales.Enemies = GK.db.enemyScale end
         if GK.db.calloutScale ~= 1 and not GK.db.scales.Callouts then GK.db.scales.Callouts = GK.db.calloutScale end
@@ -374,7 +374,7 @@ end)
 local toggleList = {
     { "callouts", "callouts", "EFC location callout buttons" },
     { "carriers", "carriers", "carrier HP and flag drop timer by the flags" },
-    { "fcnames", "fcNames", "FlagCarriers' own clickable carrier names" },
+    { "fcnames", "fcNames", "WSGForever's own clickable carrier names" },
     { "blizzfc", "moveBlizzCarriers", "move Blizzard's carrier frames by the flags (reload to undo)" },
     { "lowalert", "efcLowAlert", "red EFC LOW banner under 50% HP" },
     { "fcicon", "raidFlag", "flag icon on your carrier's raid frame" },
@@ -434,9 +434,9 @@ local function Help()
     end
 end
 
-SLASH_FLAGCARRIERS1 = "/fc"
-SLASH_FLAGCARRIERS2 = "/flagcarriers"
-SlashCmdList.FLAGCARRIERS = function(input)
+SLASH_WSGFOREVER1 = "/fc"
+SLASH_WSGFOREVER2 = "/wsgforever"
+SlashCmdList.WSGFOREVER = function(input)
     local cmd, args = (input or ""):lower():match("^%s*(%S*)%s*(.-)%s*$")
     if cmd == "unlock" then
         GK.SetLocked(false)

@@ -1,6 +1,6 @@
-<p align="center"><img src="media/logo.svg" width="180" alt="FlagCarriers logo"></p>
+<p align="center"><img src="media/logo.svg" width="180" alt="WSGForever logo"></p>
 
-<h1 align="center">FlagCarriers</h1>
+<h1 align="center">WSGForever</h1>
 
 A Warsong Gulch addon for **WoW Forever** (interface 16001).
 
@@ -15,7 +15,7 @@ A Warsong Gulch addon for **WoW Forever** (interface 16001).
 - **Auto assist**: gives everyone assist when you lead a battleground raid.
 
 ## Install
-Copy the `FlagCarriers` folder into `World of Warcraft/_forever_/Interface/AddOns/`.
+Copy the `WSGForever` folder into `World of Warcraft/_forever_/Interface/AddOns/`.
 
 ## Commands
 - `/fc unlock` / `/fc lock`: move frames by dragging; scroll over a frame to resize it.
@@ -27,7 +27,7 @@ Copy the `FlagCarriers` folder into `World of Warcraft/_forever_/Interface/AddOn
 - `/fc`: shows help and the current on/off state of every toggle.
 
 ## Credits
-FlagCarriers stands on the shoulders of these, thank you:
+WSGForever stands on the shoulders of these, thank you:
 - **vrjones1**: the [wsg rez timer and fc/efc hp](https://wago.io/cNXgQKDMd) WeakAura, which the rez timer and carrier HP are based on.
 - **Bullsei**: [BattleGroundEnemies](https://github.com/BullseiWoWAddons/BattleGroundEnemies), the original enemy frames that inspired ours.
 - **RBGDEV**: [BattleGroundEnemiesFixed](https://www.curseforge.com/projects/1444858), whose approach to targeting carriers and range checks on the modern client showed us the way.

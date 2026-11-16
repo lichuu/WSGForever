@@ -97,7 +97,7 @@ local function Hook()
 end
 
 function Carriers:Init()
-    anchor = CreateFrame("Frame", "FlagCarriersCarrierAnchor", UIParent)
+    anchor = CreateFrame("Frame", "WSGForeverCarrierAnchor", UIParent)
     anchor:SetSize(150, 60)
     anchor.gkDefaultScale = 0.8
     anchor.gkOnScale = function() if not InCombatLockdown() then Place() end end
