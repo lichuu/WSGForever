@@ -33,3 +33,6 @@ WSGForever stands on the shoulders of these, thank you:
 - **Bullsei**: [BattleGroundEnemies](https://github.com/BullseiWoWAddons/BattleGroundEnemies), the original enemy frames that inspired ours.
 - **RBGDEV**: [BattleGroundEnemiesFixed](https://www.curseforge.com/projects/1444858), whose approach to targeting carriers and range checks on the modern client showed us the way.
 - The **WeakAuras** team, for the addon the original auras were built in.
+
+## License
+[MIT](LICENSE)
