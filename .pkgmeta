@@ -1,0 +1,9 @@
+package-as: WSGForever
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - media
+  - icon.tga

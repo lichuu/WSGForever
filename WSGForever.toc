@@ -2,7 +2,7 @@
 ## Title: WSGForever
 ## Notes: Warsong Gulch callouts, flag carrier tracker, rez timer, auto-assist and enemy frames.
 ## Author: lichuu
-## Version: 0.3.1
+## Version: @project-version@
 ## X-License: MIT
 ## SavedVariables: WSGForeverDB
 ## IconTexture: Interface\Icons\INV_Misc_Rune_07
