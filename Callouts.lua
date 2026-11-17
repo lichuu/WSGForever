@@ -69,7 +69,9 @@ local function MakeButton(parent, spec)
 
     b.text = b:CreateFontString(nil, "OVERLAY")
     b.text:SetFont("Fonts\\FRIZQT__.TTF", 10, "THICKOUTLINE")
-    b.text:SetPoint("CENTER", 1, 0)
+    -- The outline makes the game measure the label wider and taller than it
+    -- draws, so true centre is 2 right and half a step down (measured in game).
+    b.text:SetPoint("CENTER", 2, -0.5)
     b.text:SetText(spec.label)
 
     b:SetScript("OnEnter", function(self)
