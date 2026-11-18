@@ -1,6 +1,8 @@
 # WSGForever
 
-## Unreleased
+## 0.5.0-beta1
+A beta: the battlefield map changes have not yet been checked with a full team. Please report what you see.
+
 - Battlefield map: teammates show as larger dots in their class colours. `/fc scale map` and `/fc scale mapdots` change the map and dot sizes; `/fc bgmap` turns it off.
 - Shorter descriptions on the settings page so none are cut off.
 
