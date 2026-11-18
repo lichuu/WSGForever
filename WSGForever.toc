@@ -15,4 +15,5 @@ AutoAssist.lua
 Enemies.lua
 BlizzCarriers.lua
 RaidFlag.lua
+BattleMap.lua
 Options.lua

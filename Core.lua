@@ -23,6 +23,7 @@ local defaults = {
     autoAssist = true,
     enemies = true,
     enemyScale = 1,
+    battleMap = true, -- class-coloured, larger teammate dots on the battlefield map
     minimapButton = true,
     minimapAngle = 205, -- degrees around the minimap
 }
@@ -388,6 +389,7 @@ local toggleList = {
     { "rez", "rezTimer", "graveyard rez timer" },
     { "enemies", "enemies", "enemy player frames" },
     { "assist", "autoAssist", "give everyone assist when you lead" },
+    { "bgmap", "battleMap", "battlefield map: teammates as larger class-coloured dots" },
 }
 local toggles = { raidflag = "raidFlag" } -- old name still works
 for _, t in ipairs(toggleList) do toggles[t[1]] = t[2] end
@@ -402,6 +404,8 @@ local scaleList = {
     { "carriers", "Carrier text" },
     { "spawn", "Flag spawn" },
     { "fcicon", "Raid flag icon" },
+    { "map", "Battle map" },
+    { "mapdots", "Map dots" },
 }
 
 local function SetScale(args)

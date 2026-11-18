@@ -1,5 +1,9 @@
 # WSGForever
 
+## Unreleased
+- Battlefield map: teammates show as larger dots in their class colours. `/fc scale map` and `/fc scale mapdots` change the map and dot sizes; `/fc bgmap` turns it off.
+- Shorter descriptions on the settings page so none are cut off.
+
 ## 0.4.0
 - Minimap button: left click opens settings, right click unlocks the frames for moving, drag to move the button.
 - Settings page with every feature toggle and the layout tools. It is also listed under Options > AddOns. All `/fc` commands still work.

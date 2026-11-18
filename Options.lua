@@ -12,21 +12,33 @@ local FLAT = "Interface\\Buttons\\WHITE8X8"
 local COL_W, ROW_H, PAD = 270, 38, 18
 local PAGE_W = PAD + COL_W + 20 + COL_W + PAD
 
--- Settings in the order shown: { setting, name, what it does }.
+-- Settings in the order shown: { setting, name, one line, tooltip }.
 local SECTIONS = {
     { "Flag carriers", {
-        { "carriers", "Carrier health and drop timer", "Health by the carrier names, and a countdown when a flag is dropped." },
-        { "moveBlizzCarriers", "Carrier frames beside the flags", "Moves the game's carrier frames up next to the score. Reload to undo." },
-        { "fcNames", "Clickable carrier names", "WSGForever's own carrier names. Click one to target the carrier." },
-        { "efcLowAlert", "Enemy carrier low warning", "A red banner when the enemy flag carrier is under 50% health." },
-        { "raidFlag", "Flag icon on raid frames", "Marks your team's carrier in the raid frames." },
+        { "carriers", "Carrier health and drop timer", "Health and a drop countdown by the names.",
+            "Health next to the carrier names, and a countdown when a flag is dropped." },
+        { "moveBlizzCarriers", "Carrier frames beside the flags", "The game's carrier frames, by the score.",
+            "Moves the game's carrier frames up next to the score. Reload to undo." },
+        { "fcNames", "Clickable carrier names", "Our own carrier names. Click to target.",
+            "WSGForever's own carrier names. Click one to target the carrier." },
+        { "efcLowAlert", "Enemy carrier low warning", "A red banner under 50% health.",
+            "A red banner when the enemy flag carrier is under 50% health." },
+        { "raidFlag", "Flag icon on raid frames", "Marks your carrier in the raid frames.",
+            "Marks your team's carrier in the raid frames." },
     } },
     { "Battleground", {
-        { "callouts", "Callout bar", "One-click location callouts to battleground chat." },
-        { "enemies", "Enemy frames", "The enemy team with class, health and range. Click to target." },
-        { "rezTimer", "Resurrection timer", "Countdown to the next graveyard wave, in every battleground." },
-        { "autoAssist", "Auto assist", "Gives everyone raid assist when you lead a battleground." },
-        { "minimapButton", "Minimap button", "The button that opens this page." },
+        { "callouts", "Callout bar", "One-click callouts to battleground chat.",
+            "One-click location callouts to battleground chat." },
+        { "enemies", "Enemy frames", "Enemy team with class, health and range.",
+            "The enemy team with class, health and range. Left click targets, right click focuses, middle click pings." },
+        { "rezTimer", "Resurrection timer", "Countdown to the next graveyard wave.",
+            "Countdown to the next graveyard wave, in every battleground." },
+        { "autoAssist", "Auto assist", "Raid assist for everyone when you lead.",
+            "Gives everyone raid assist when you lead a battleground." },
+        { "battleMap", "Battlefield map dots", "Teammates as bigger class-coloured dots.",
+            "Shows teammates on the battlefield map as bigger dots in their class colours. /fc scale map and /fc scale mapdots change the sizes." },
+        { "minimapButton", "Minimap button", "The button that opens this page.",
+            "The minimap button that opens this page. /fc minimap brings it back." },
     } },
 }
 
@@ -35,7 +47,7 @@ local pages = {} -- every copy of the page: the window's and the game options'
 
 -- The page ---------------------------------------------------------------------
 
-local function MakeCheck(page, parent, key, name, desc)
+local function MakeCheck(page, parent, key, name, desc, full)
     local b = CreateFrame("Button", nil, parent)
     b:SetSize(COL_W, ROW_H - 4)
     local edge = b:CreateTexture(nil, "BACKGROUND")
@@ -71,7 +83,7 @@ local function MakeCheck(page, parent, key, name, desc)
     b:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(name)
-        GameTooltip:AddLine(desc, 1, 1, 1, true)
+        GameTooltip:AddLine(full or desc, 1, 1, 1, true)
         GameTooltip:Show()
     end)
     b:SetScript("OnLeave", GameTooltip_Hide)
@@ -110,7 +122,7 @@ local function BuildPage(parent, x, y)
         MakeHeader(parent, section[1], cx, cy, COL_W)
         cy = cy - 28
         for _, item in ipairs(section[2]) do
-            MakeCheck(page, parent, item[1], item[2], item[3]):SetPoint("TOPLEFT", cx, cy)
+            MakeCheck(page, parent, item[1], item[2], item[3], item[4]):SetPoint("TOPLEFT", cx, cy)
             cy = cy - ROW_H
         end
         lowest = math.min(lowest, cy)
