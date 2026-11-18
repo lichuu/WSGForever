@@ -7,7 +7,8 @@ local _, GK = ...
 --  * a countdown to the flags spawning again after a capture
 --  * an "EFC LOW" banner when the enemy carrier is under 50% HP
 
-local DROP_RETURN = 10 -- seconds before a dropped flag returns to base
+local DROP_RETURN = 12 -- seconds before a dropped flag returns to base
+local FLAG_RESPAWN = 12 -- seconds until the flags spawn again after a capture
 local LOW_HP = 0.5     -- "EFC LOW" banner below this
 
 local FC = {}
@@ -41,18 +42,31 @@ local function IsEnemy(unit)
     if enemy ~= nil then return enemy end
     local faction = GK.Plain(UnitFactionGroup(unit))
     if faction then return faction ~= UnitFactionGroup("player") end
+    -- Someone in our own raid is never an enemy.
+    if GK.Plain(UnitInRaid(unit)) or GK.Plain(UnitInParty(unit)) then return false end
 end
 
 -- Second result is true when a slot is filled but its side can't be read,
 -- so "no unit" doesn't have to mean the flag is no longer carried.
 local function CarrierUnit(wantEnemy)
-    local unsure = false
+    local exists, enemy = {}, {}
     for i = 1, 2 do
         local unit = "arena" .. i
         if GK.Plain(UnitExists(unit)) then
-            local enemy = IsEnemy(unit)
-            if enemy == wantEnemy then return unit, false end
-            if enemy == nil then unsure = true end
+            exists[i], enemy[i] = true, IsEnemy(unit)
+        end
+    end
+    -- Two carriers are always one from each team, so a side the game won't
+    -- give is the opposite of the other carrier's.
+    if exists[1] and exists[2] then
+        if enemy[1] == nil and enemy[2] ~= nil then enemy[1] = not enemy[2]
+        elseif enemy[2] == nil and enemy[1] ~= nil then enemy[2] = not enemy[1] end
+    end
+    local unsure = false
+    for i = 1, 2 do
+        if exists[i] then
+            if enemy[i] == wantEnemy then return "arena" .. i, false end
+            if enemy[i] == nil then unsure = true end
         end
     end
     return nil, unsure
@@ -67,6 +81,35 @@ local function FilledSlots()
     return n
 end
 local lastFilled = 0
+
+-- How many of the game's own carrier frames are showing. These stay
+-- readable when the carrier slots themselves aren't.
+local function ShownCarrierFrames()
+    local n = 0
+    for i = 1, 2 do
+        local f = _G["ArenaEnemyMatchFrame" .. i]
+        local ok, shown = pcall(function() return f and f:IsVisible() end)
+        if ok and shown then n = n + 1 end
+    end
+    return n
+end
+
+-- Keeps a short record of each drop countdown and what the game showed at
+-- the time, to track down false ones (/fc debug prints how many).
+local function NoteDrop(flag, source)
+    local log = GK.db.dropLog or {}
+    GK.db.dropLog = log
+    local parts = { date("%H:%M:%S"), flag, source, "frames=" .. ShownCarrierFrames() }
+    for i = 1, 2 do
+        local unit = "arena" .. i
+        local exists = UnitExists(unit)
+        parts[#parts + 1] = string.format("%s[exists=%s enemy=%s name=%s]", unit,
+            GK.IsSecret(exists) and "hidden" or tostring(exists),
+            tostring(GK.Plain(exists) and IsEnemy(unit)), tostring(GK.Plain(exists) and GK.FullName(unit)))
+    end
+    log[#log + 1] = table.concat(parts, " ")
+    while #log > 40 do table.remove(log, 1) end
+end
 
 function GK.EnemyCarrierUnit() return (CarrierUnit(true)) end
 local function FriendlyCarrierUnit() return (CarrierUnit(false)) end
@@ -94,7 +137,7 @@ local function OnCapture(now)
     for _, s in pairs(state) do s.droppedAt, s.lostAt = nil, nil end
     if capturedAt and now - capturedAt < 5 then return end
     capturedAt = now
-    spawnAt = now + (GK.db.flagRespawn or 12)
+    spawnAt = now + FLAG_RESPAWN
 end
 
 local function RefreshClasses()
@@ -203,7 +246,10 @@ local function SyncFromSlots(flag, now, slotLost)
         changed = true
     end
     if s.lostAt and now - s.lostAt > 1 then
-        if not s.droppedAt then s.droppedAt = s.lostAt end
+        if not s.droppedAt then
+            s.droppedAt = s.lostAt
+            NoteDrop(flag, "slot")
+        end
         s.lostAt = nil
     end
     return changed
@@ -305,7 +351,18 @@ local function PlaceLabel(flag, holder)
     if nameFS then
         label:SetPoint("LEFT", nameFS, "LEFT", nameFS:GetUnboundedStringWidth() + 6, 0)
     elseif widget then
-        label:SetPoint("LEFT", widget, "RIGHT", 4, 0)
+        -- Past Blizzard's flag icon, which sits just right of the score, and
+        -- past the carrier frames when those are parked there and in use.
+        local x = 34
+        local framesRight = GK.CarrierFramesRight and GK.CarrierFramesRight()
+        local widgetRight = widget:GetRight()
+        if framesRight and widgetRight then
+            local k = widget:GetEffectiveScale() / UIParent:GetEffectiveScale()
+            -- Only when the frames really are beside the flag rows.
+            local gap = framesRight - widgetRight * k
+            if gap > 0 and gap < 400 then x = math.max(x, gap + 10) end
+        end
+        label:SetPoint("LEFT", widget, "RIGHT", x, 0)
     else
         label:SetPoint("TOP", UIParent, "TOP", 0, flag == "Alliance" and -60 or -78)
     end
@@ -505,6 +562,7 @@ local function OnSystemMessage(msg)
         if RequestBattlefieldScoreData then RequestBattlefieldScoreData() end
     elseif lower:find("dropped by") then
         s.holder, s.unit, s.fromSlot, s.lostAt, s.droppedAt = nil, nil, nil, nil, GetTime()
+        NoteDrop(flag, "chat")
     elseif lower:find("captured the") then
         s.holder, s.unit, s.fromSlot = nil, nil, nil
         OnCapture(GetTime())
@@ -560,6 +618,12 @@ function FC:Init()
         lastFilled = filled
         local changedA = SyncFromSlots("Alliance", now, slotLost)
         local changedH = SyncFromSlots("Horde", now, slotLost)
+        -- Both slots filled (or both of the game's carrier frames showing)
+        -- means both flags are being carried, even if
+        -- the game won't say who is on which side: nothing is dropped.
+        if filled == 2 or ShownCarrierFrames() == 2 then
+            for _, s in pairs(state) do s.droppedAt, s.lostAt = nil, nil end
+        end
         if changedA or changedH then ApplyMacros() end
         UpdateFlag("Alliance", units)
         UpdateFlag("Horde", units)
@@ -578,6 +642,8 @@ function FC:Debug()
         GK.Print(string.format("%s flag: holder %s, unit %s, dropped %s", flag, tostring(s.holder),
             tostring(s.unit), s.droppedAt and string.format("%.0fs ago", GetTime() - s.droppedAt) or "no"))
     end
+    GK.Print(string.format("carrier frames showing: %d, drop countdowns recorded: %d", ShownCarrierFrames(),
+        GK.db.dropLog and #GK.db.dropLog or 0))
     GK.Print(string.format("captures read: %s, flags spawn in: %s", tostring(TotalCaptures()),
         spawnAt and string.format("%.0fs", spawnAt - GetTime()) or "no"))
 end
@@ -609,7 +675,7 @@ function FC:Refresh()
     spawnFrame:SetShown(GK.db.carriers and (inWSG or GK.ShouldShowAll()))
     -- A sample while unlocked or testing so it can be placed.
     if not inWSG then
-        spawnFrame.text:SetText(GK.ShouldShowAll() and SPAWN_TEXT:format(GK.db.flagRespawn) or "")
+        spawnFrame.text:SetText(GK.ShouldShowAll() and SPAWN_TEXT:format(FLAG_RESPAWN) or "")
     end
     buttons.Alliance:SetShown(show and GK.db.fcNames)
     buttons.Horde:SetShown(show and GK.db.fcNames)

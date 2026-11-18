@@ -42,6 +42,22 @@ local function TopFlagCount()
     return best
 end
 
+-- Right edge of the carrier frames in screen units, when they sit by the
+-- flags and one is showing, so other text can be kept clear of them.
+function GK.CarrierFramesRight()
+    if not GK.db.moveBlizzCarriers then return nil end
+    local right
+    for i = 1, 2 do
+        local f = _G["ArenaEnemyMatchFrame" .. i]
+        local ok, r = pcall(function() return f and f:IsVisible() and GK.Plain(f:GetRight()) end)
+        if ok and r then
+            r = r * f:GetEffectiveScale() / UIParent:GetEffectiveScale()
+            if not right or r > right then right = r end
+        end
+    end
+    return right
+end
+
 local PlaceUnsafe
 local function Place()
     local ok, err = pcall(PlaceUnsafe)

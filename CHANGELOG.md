@@ -1,5 +1,13 @@
 # WSGForever
 
+## 0.4.0
+- Minimap button: left click opens settings, right click unlocks the frames for moving, drag to move the button.
+- Settings page with every feature toggle and the layout tools. It is also listed under Options > AddOns. All `/fc` commands still work.
+- Fixed "Dropped - returns in" showing while the flag was still being carried.
+- The drop countdown no longer covers the flag icon or the carrier frames.
+- The drop countdown now runs for 12 seconds.
+- Removed the flag spawn time setting; it is always 12 seconds.
+
 ## 0.3.2
 - Releases are now built and published automatically.
 - The download now includes the MIT license.

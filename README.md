@@ -14,6 +14,7 @@ A Warsong Gulch addon for **WoW Forever** (interface 16001).
 - **Rez timer**: graveyard wave countdown in any battleground and how many enemies are waiting to rez.
 - **FC icon**: flag icon on your team's carrier in the raid frames.
 - **Auto assist**: gives everyone assist when you lead a battleground raid.
+- **Settings**: a minimap button and a settings page (also under Options > AddOns) for every toggle, alongside the `/fc` commands.
 
 ## Install
 Copy the `WSGForever` folder into `World of Warcraft/_forever_/Interface/AddOns/`.
@@ -23,7 +24,8 @@ Copy the `WSGForever` folder into `World of Warcraft/_forever_/Interface/AddOns/
 - `/fc test`: preview everything outside a battleground.
 - `/fc reset`: reset positions and sizes.
 - `/fc scale`: list sizes; `/fc scale <name> <percent>` sets one (also covers the carrier text and raid flag icon, which can't be scrolled on).
-- `/fc spawn <seconds>`: how long the flags take to spawn after a capture (default 12).
+- `/fc options`: open the settings window (also on the minimap button and under Options > AddOns).
+- `/fc minimap`: show or hide the minimap button.
 - `/fc <toggle>`: turn features on or off (`callouts`, `carriers`, `fcnames`, `blizzfc`, `lowalert`, `fcicon`, `rez`, `enemies`, `assist`).
 - `/fc`: shows help and the current on/off state of every toggle.
 

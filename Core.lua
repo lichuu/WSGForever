@@ -17,13 +17,14 @@ local defaults = {
     efcLowAlert = true,
     raidFlag = true,
     rezTimer = true,
-    flagRespawn = 12, -- seconds until the flags spawn again after a capture
     rezInterval = 31.5,
     wsgRezThreshold = 2,
     avRezThreshold = 4,
     autoAssist = true,
     enemies = true,
     enemyScale = 1,
+    minimapButton = true,
+    minimapAngle = 205, -- degrees around the minimap
 }
 
 -- Forever runs the Midnight API, where some values (enemy health, some names)
@@ -432,13 +433,33 @@ local function Help()
     print("  /fc test           - preview everything outside a battleground")
     print("  /fc reset          - reset frame positions and sizes")
     print("  /fc scale          - list sizes; /fc scale <name> <percent> sets one")
-    print("  /fc spawn <secs>   - flag spawn delay after a capture (now " .. GK.db.flagRespawn .. ")")
     print("  /fc sync           - sync rez timer with your group")
+    print("  /fc options        - open the settings window")
+    print("  /fc minimap        - show or hide the minimap button")
     print("  Turn a feature on or off:")
     for _, t in ipairs(toggleList) do
         local on = GK.db[t[2]] and "|cff4fff4fon|r" or "|cffff4f4foff|r"
         print(string.format("  /fc %-10s %s - %s", t[1], on, t[3]))
     end
+end
+
+function GK.SetTestMode(on)
+    GK.testMode = on
+    GK.Print("Test mode " .. (on and "on" or "off"))
+    GK.Refresh()
+end
+
+-- Puts every frame back where and how big it started.
+function GK.ResetLayout()
+    if InCombatLockdown() then GK.Print("Can't do that in combat.") return end
+    wipe(GK.db.positions)
+    wipe(GK.db.scales)
+    for _, f in ipairs(movers) do
+        GK.ApplyScale(f)
+        GK.RestorePosition(f)
+        f.gkHandle.label:SetText(f.gkKey)
+    end
+    GK.Refresh()
 end
 
 SLASH_WSGFOREVER1 = "/fc"
@@ -451,25 +472,18 @@ SlashCmdList.WSGFOREVER = function(input)
     elseif cmd == "lock" then
         GK.SetLocked(true)
     elseif cmd == "test" then
-        GK.testMode = not GK.testMode
-        GK.Print("Test mode " .. (GK.testMode and "on" or "off"))
-        GK.Refresh()
+        GK.SetTestMode(not GK.testMode)
     elseif cmd == "reset" then
-        if InCombatLockdown() then GK.Print("Can't do that in combat.") return end
-        wipe(GK.db.positions)
-        wipe(GK.db.scales)
-        for _, f in ipairs(movers) do
-            GK.ApplyScale(f)
-            GK.RestorePosition(f)
-            f.gkHandle.label:SetText(f.gkKey)
-        end
+        GK.ResetLayout()
+    elseif cmd == "options" or cmd == "config" or cmd == "settings" then
+        local o = GK.modules.Options
+        if o then o:Toggle() end
+    elseif cmd == "minimap" then
+        GK.db.minimapButton = not GK.db.minimapButton
+        GK.Print("minimap button " .. (GK.db.minimapButton and "on" or "off"))
         GK.Refresh()
     elseif cmd == "scale" then
         SetScale(args)
-    elseif cmd == "spawn" then
-        local secs = tonumber(args)
-        if secs and secs > 0 and secs <= 60 then GK.db.flagRespawn = secs end
-        GK.Print("Flags spawn " .. GK.db.flagRespawn .. "s after a capture.")
     elseif cmd == "debug" then
         for _, name in ipairs({ "BlizzCarriers", "Carriers" }) do
             local m = GK.modules[name]
