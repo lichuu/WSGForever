@@ -7,3 +7,4 @@ manual-changelog:
 ignore:
   - media
   - icon.tga
+  - tests
