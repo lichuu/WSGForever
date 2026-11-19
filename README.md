@@ -1,20 +1,40 @@
-<p align="center"><img src="media/logo.svg" width="180" alt="WSGForever logo"></p>
+<p align="center"><img src="media/banner.jpg" alt="WSGForever: Warsong Gulch tools for WoW Forever"></p>
 
-<h1 align="center">WSGForever</h1>
+WSGForever is a Warsong Gulch addon for **World of Warcraft: Forever**. It helps your team track both flag carriers, call out where the enemy carrier is, watch the enemy team, and time the graveyard waves.
 
-A Warsong Gulch addon for **WoW Forever** (interface 16001).
+Get it on [CurseForge](https://www.curseforge.com/wow/addons/wsgforever) or from the [releases page](https://github.com/lichuu/WSGForever/releases).
 
 ## Features
-- **Callout bar**: one-click location callouts to instance chat (FR, TUN, ROOF, RAMP, GY, MID and more), plus an "EFC LOW" button.
-- **Carrier HP**: health shown next to Blizzard's flag carrier names, with drop/return timers.
-- **Flag spawn timer**: countdown to the flags spawning again after a capture.
-- **EFC LOW banner**: a local alert when the enemy flag carrier is under 50% HP.
-- **Carrier frames**: moves Blizzard's carrier frames next to the flags.
-- **Enemy frames**: battleground enemy list with HP, mana, dead/alive, range, targeted-by count and a carrier highlight. Left click a row to target, right click to focus, middle click to ping Attack.
-- **Rez timer**: graveyard wave countdown in any battleground and how many enemies are waiting to rez.
-- **FC icon**: flag icon on your team's carrier in the raid frames.
-- **Auto assist**: gives everyone assist when you lead a battleground raid.
-- **Settings**: a minimap button and a settings page (also under Options > AddOns) for every toggle, alongside the `/fc` commands.
+
+### Flag and rez timers
+![Drop countdown, rez timer, flag spawn timer and the enemy carrier low banner](media/gallery/timers.jpg)
+
+Carrier health sits beside the score. A countdown shows when a dropped flag returns and when the flags spawn again after a capture, and a red banner warns when the enemy carrier is under half health. The rez timer counts down to the next graveyard wave in every battleground.
+
+### Enemy frames
+![The enemy team list](media/gallery/enemy-frames.jpg)
+
+The whole enemy team with class, health, mana, range, who is dead and how many teammates are targeting each player. The flag carrier is highlighted. Left click targets, right click sets focus, middle click pings.
+
+### Callout bar
+![The callout bar](media/gallery/callout-bar.jpg)
+
+One click tells your team where the enemy flag carrier is: both bases, midfield, and buttons for pick up, cap and "EFC low".
+
+### Battlefield map
+![Teammates as class-coloured dots on the battlefield map](media/gallery/battlefield-map.jpg)
+
+Teammates show as larger dots in their class colours. `/fc scale map` and `/fc scale mapdots` resize the map and the dots.
+
+### Settings
+![The settings window](media/gallery/settings.jpg)
+
+A minimap button opens a settings page for every feature, also listed under Options > AddOns. Every option is a `/fc` command too.
+
+### Also
+- A flag icon on your team's carrier in the raid frames.
+- The game's carrier frames moved up beside the score.
+- Raid assist for everyone when you lead a battleground.
 
 ## Install
 Copy the `WSGForever` folder into `World of Warcraft/_forever_/Interface/AddOns/`.
