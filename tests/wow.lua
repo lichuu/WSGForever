@@ -127,9 +127,22 @@ function GetZoneText() return sim.zone or "Warsong Gulch" end
 sim.scores = {}
 function GetNumBattlefieldScores() return #sim.scores end
 C_PvP = { GetScoreInfo = function(i) return sim.scores[i] end }
+-- The older scoreboard call, with its positional results.
+function GetBattlefieldScore(i)
+    local r = sim.scores[i]
+    if not r then return nil end
+    return r.name, r.killingBlows, r.honorableKills, r.deaths, r.honorGained, r.faction, 0, "Race", "Class", r.classToken, r.damageDone, r.healingDone
+end
+function GetBattlefieldStatData(i, j)
+    local r = sim.scores[i]
+    local st = r and r.stats
+    if st == SECRET then return SECRET end
+    return type(st) == "table" and st[j] and st[j].pvpStatValue or nil
+end
 function GetBattlefieldWinner() return sim.winner end
 function GetBattlefieldInstanceRunTime() return sim.runTimeMs or 0 end
 function RequestBattlefieldScoreData() end
+function GetNumGroupMembers() return 0 end
 function IsInGroup() return true end
 function IsInRaid() return true end
 function UnitIsGroupLeader() return false end

@@ -36,27 +36,29 @@ local function MyScore()
     local me, short = GK.FullName("player"), GK.Plain((UnitName("player")))
     local n = GetNumBattlefieldScores and GetNumBattlefieldScores() or 0
     for i = 1, n do
-        if C_PvP and C_PvP.GetScoreInfo then
-            local info = C_PvP.GetScoreInfo(i)
-            local name = info and GK.Plain(info.name)
-            if name and (name == me or name == short) then
-                local row = { kills = Num(info.killingBlows), hk = Num(info.honorableKills), deaths = Num(info.deaths),
-                    honor = Num(info.honorGained), damage = Num(info.damageDone), healing = Num(info.healingDone) }
-                -- Battleground-specific columns: in Warsong Gulch, captures then returns.
-                if type(info.stats) == "table" then
-                    row.caps = info.stats[1] and Num(info.stats[1].pvpStatValue)
-                    row.returns = info.stats[2] and Num(info.stats[2].pvpStatValue)
-                end
-                return row
-            end
-        elseif GetBattlefieldScore then
+        -- GetBattlefieldScore first: it is the call known to return readable
+        -- numbers on Forever. The newer one is the fallback.
+        if GetBattlefieldScore then
             local name, kills, hk, deaths, honor, _, _, _, _, _, damage, healing = GetBattlefieldScore(i)
             name = GK.Plain(name)
             if name and (name == me or name == short) then
                 local row = { kills = Num(kills), hk = Num(hk), deaths = Num(deaths), honor = Num(honor),
                     damage = Num(damage), healing = Num(healing) }
+                -- Battleground-specific columns: in Warsong Gulch, captures then returns.
                 if GetBattlefieldStatData then
                     row.caps, row.returns = Num(GetBattlefieldStatData(i, 1)), Num(GetBattlefieldStatData(i, 2))
+                end
+                return row
+            end
+        elseif C_PvP and C_PvP.GetScoreInfo then
+            local info = C_PvP.GetScoreInfo(i)
+            local name = info and GK.Plain(info.name)
+            if name and (name == me or name == short) then
+                local row = { kills = Num(info.killingBlows), hk = Num(info.honorableKills), deaths = Num(info.deaths),
+                    honor = Num(info.honorGained), damage = Num(info.damageDone), healing = Num(info.healingDone) }
+                if type(info.stats) == "table" then
+                    row.caps = info.stats[1] and Num(info.stats[1].pvpStatValue)
+                    row.returns = info.stats[2] and Num(info.stats[2].pvpStatValue)
                 end
                 return row
             end
@@ -132,6 +134,48 @@ local function Save(winner, duration)
     GK.Print(string.format("Match recorded: %s, %s. /fc history shows them all.", record.map,
         result == "win" and "|cff4fff4fwin|r" or result == "loss" and "|cffff4f4floss|r" or "draw"))
     History:Update()
+end
+
+-- Import ----------------------------------------------------------------------
+
+-- Copies battlegrounds from Nova Instance Tracker's own history, for matches
+-- played before this addon was recording. Returns how many were added.
+function History:ImportNova()
+    local nova = _G.NITdatabase
+    local theirs = type(nova) == "table" and nova.global
+    local added = 0
+    if type(theirs) ~= "table" then return nil end
+    local list = GK.db.matches
+    local have = {}
+    for _, m in ipairs(list) do have[#have + 1] = m end
+    for _, realm in pairs(theirs) do
+        local instances = type(realm) == "table" and realm.instances
+        if type(instances) == "table" then
+            for _, e in ipairs(instances) do
+                if type(e) == "table" and e.type == "bg" and e.winningFaction and e.faction and (e.leftTime or e.enteredTime) then
+                    local at = e.leftTime or e.enteredTime
+                    local dup = false
+                    for _, m in ipairs(have) do
+                        if m.map == e.instanceName and math.abs((m.at or 0) - at) < 900 then dup = true break end
+                    end
+                    if not dup then
+                        list[#list + 1] = {
+                            at = at, map = e.instanceName, who = e.playerName, imported = true,
+                            result = (e.winningFaction ~= 0 and e.winningFaction ~= 1) and "draw"
+                                or (e.winningFaction == e.faction and "win" or "loss"),
+                            -- Their times run from zoning in to leaving, so this includes the gate wait.
+                            seconds = e.enteredTime and e.leftTime and (e.leftTime - e.enteredTime) or nil,
+                            kills = e.kb, hk = e.hk, deaths = e.deaths, honor = e.honor, damage = e.damage, healing = e.healing,
+                        }
+                        added = added + 1
+                    end
+                end
+            end
+        end
+    end
+    table.sort(list, function(a, b) return (a.at or 0) > (b.at or 0) end)
+    while #list > MAX_RECORDS do table.remove(list) end
+    return added
 end
 
 -- The window ------------------------------------------------------------------
@@ -245,6 +289,21 @@ local function Build()
         History:Update()
     end)
     f:SetScript("OnHide", function() clear.armed = false clear:SetText("Clear history") end)
+
+    -- Only offered when Nova Instance Tracker is installed.
+    if type(_G.NITdatabase) == "table" then
+        local import = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+        import:SetSize(210, 22)
+        import:SetPoint("RIGHT", clear, "LEFT", -8, 0)
+        import:SetText("Import from Nova Instance Tracker")
+        import:SetScript("OnClick", function()
+            local added = History:ImportNova()
+            GK.Print(added and added > 0 and (added .. " matches imported from Nova Instance Tracker.")
+                or "Nothing new to import from Nova Instance Tracker.")
+            offset = 0
+            History:Update()
+        end)
+    end
 
     f:EnableMouseWheel(true)
     f:SetScript("OnMouseWheel", function(_, delta)

@@ -47,8 +47,8 @@ end
 
 local GK = sim.load(dir)
 current = "loading the addon"
+sim.run(8) -- long enough for every module's first updates
 noErrors()
-sim.run(8)
 
 scenario("a dropped flag counts down from 12 and then clears", function()
     say("The Alliance Flag was picked up by Cheat Jump!")
@@ -241,6 +241,26 @@ scenario("the history window opens and shows the totals", function()
     check(sim.showing("Warsong Gulch") ~= nil, "match row missing")
     SlashCmdList.WSGFOREVER("history")
     sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
+end)
+
+scenario("battlegrounds import from Nova Instance Tracker once, dungeons are skipped", function()
+    wipe(GK.db.matches)
+    -- The shape Nova Instance Tracker saves, taken from a real file.
+    NITdatabase = { global = { PvP = { instances = {
+        { type = "party", instanceName = "Wailing Caverns", playerName = "Tear Gas", enteredTime = 5000, leftTime = 7000 },
+        { type = "bg", instanceName = "Warsong Gulch", playerName = "Tear Gas", enteredTime = 3000, leftTime = 3554,
+            winningFaction = 0, faction = 0, kb = 3, hk = 25, deaths = 0, honor = 267, damage = 4730, healing = 0 },
+        { type = "bg", instanceName = "Warsong Gulch", playerName = "Tear Gas", enteredTime = 1000, leftTime = 2380,
+            winningFaction = 1, faction = 0, kb = 1, hk = 9, deaths = 4, honor = 222, damage = 100, healing = 9000 },
+    } } }, profileKeys = {} }
+    local added = GK.modules.History:ImportNova()
+    check(added == 2, "expected 2 imported, got " .. tostring(added))
+    local newest, oldest = GK.db.matches[1], GK.db.matches[2]
+    check(newest and newest.result == "win" and newest.kills == 3 and newest.honor == 267 and newest.seconds == 554, "newest match wrong")
+    check(oldest and oldest.result == "loss" and oldest.deaths == 4, "older match wrong")
+    check(GK.modules.History:ImportNova() == 0, "importing twice added duplicates")
+    NITdatabase = nil
+    check(GK.modules.History:ImportNova() == nil, "import without Nova should report nothing to read")
 end)
 
 if #failures > 0 then
