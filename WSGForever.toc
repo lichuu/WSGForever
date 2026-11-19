@@ -16,4 +16,5 @@ Enemies.lua
 BlizzCarriers.lua
 RaidFlag.lua
 BattleMap.lua
+History.lua
 Options.lua

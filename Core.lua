@@ -24,6 +24,7 @@ local defaults = {
     enemies = true,
     enemyScale = 1,
     battleMap = true, -- class-coloured, larger teammate dots on the battlefield map
+    history = true, -- keep a record of finished battlegrounds
     minimapButton = true,
     minimapAngle = 205, -- degrees around the minimap
 }
@@ -390,6 +391,7 @@ local toggleList = {
     { "enemies", "enemies", "enemy player frames" },
     { "assist", "autoAssist", "give everyone assist when you lead" },
     { "bgmap", "battleMap", "battlefield map: teammates as larger class-coloured dots" },
+    { "record", "history", "record each finished battleground in the match history" },
 }
 local toggles = { raidflag = "raidFlag" } -- old name still works
 for _, t in ipairs(toggleList) do toggles[t[1]] = t[2] end
@@ -439,6 +441,7 @@ local function Help()
     print("  /fc scale          - list sizes; /fc scale <name> <percent> sets one")
     print("  /fc sync           - sync rez timer with your group")
     print("  /fc options        - open the settings window")
+    print("  /fc history        - open the match history")
     print("  /fc minimap        - show or hide the minimap button")
     print("  Turn a feature on or off:")
     for _, t in ipairs(toggleList) do
@@ -482,6 +485,9 @@ SlashCmdList.WSGFOREVER = function(input)
     elseif cmd == "options" or cmd == "config" or cmd == "settings" then
         local o = GK.modules.Options
         if o then o:Toggle() end
+    elseif cmd == "history" then
+        local h = GK.modules.History
+        if h then h:Toggle() end
     elseif cmd == "minimap" then
         GK.db.minimapButton = not GK.db.minimapButton
         GK.Print("minimap button " .. (GK.db.minimapButton and "on" or "off"))

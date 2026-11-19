@@ -152,6 +152,97 @@ scenario("every command and the settings window run without errors", function()
     sim.printed = {} -- help text mentions no errors; the check above is the real one
 end)
 
+-- Match history ----------------------------------------------------------------
+
+local function myRow(extra)
+    local row = { name = "Test-Player", classToken = "PRIEST", faction = 0, killingBlows = 4, honorableKills = 21,
+        deaths = 3, honorGained = 187, damageDone = 9000, healingDone = 42000,
+        stats = { { pvpStatValue = 1 }, { pvpStatValue = 2 } } }
+    for k, v in pairs(extra or {}) do row[k] = v end
+    return row
+end
+
+local function newMatch()
+    sim.instanceType, sim.winner = "none", nil
+    sim.fire("PLAYER_ENTERING_WORLD")
+    sim.instanceType = "pvp"
+    sim.fire("PLAYER_ENTERING_WORLD")
+end
+
+scenario("a finished match is recorded once, with your scoreboard line", function()
+    wipe(GK.db.matches)
+    newMatch()
+    sim.scores = { { name = "Someone-Else", classToken = "WARRIOR", faction = 1 }, myRow() }
+    sim.winner = 0 -- Horde, the player's side
+    sim.fire("PVP_MATCH_COMPLETE", 0, 754)
+    sim.run(2)
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    local m = GK.db.matches[1]
+    check(#GK.db.matches == 1, "expected 1 record, got " .. #GK.db.matches)
+    check(m and m.result == "win", "result should be a win, got " .. tostring(m and m.result))
+    check(m and m.kills == 4 and m.deaths == 3 and m.honor == 187, "scoreboard numbers not stored")
+    check(m and m.caps == 1 and m.returns == 2, "captures and returns not stored")
+    check(m and m.seconds == 754, "match length not stored, got " .. tostring(m and m.seconds))
+    check(m and m.map == "Warsong Gulch", "battleground name not stored")
+    sim.printed = {}
+end)
+
+scenario("the next match is a new record, and a loss reads as a loss", function()
+    wipe(GK.db.matches)
+    newMatch()
+    sim.scores = { myRow() }
+    sim.winner = 0
+    sim.fire("UPDATE_BATTLEFIELD_SCORE") -- clients without the match-complete event
+    newMatch()
+    sim.scores = { myRow({ killingBlows = 0 }) }
+    sim.winner = 1
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(#GK.db.matches == 2, "expected 2 records, got " .. #GK.db.matches)
+    check(GK.db.matches[1].result == "loss" and GK.db.matches[2].result == "win", "newest should be the loss")
+    sim.printed = {}
+end)
+
+scenario("numbers the game hides are left blank, not a crash", function()
+    wipe(GK.db.matches)
+    newMatch()
+    sim.scores = { myRow({ killingBlows = sim.SECRET, honorGained = sim.SECRET, stats = sim.SECRET }) }
+    sim.winner = 1
+    sim.fire("PVP_MATCH_COMPLETE", 1, sim.SECRET)
+    sim.run(2)
+    local m = GK.db.matches[1]
+    check(m ~= nil, "no record saved")
+    check(m and m.kills == nil and m.honor == nil and m.deaths == 3, "hidden values should be blank, readable ones kept")
+    sim.printed = {}
+end)
+
+scenario("nothing is recorded while a match is still running, or with recording off", function()
+    wipe(GK.db.matches)
+    newMatch()
+    sim.scores = { myRow() }
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(#GK.db.matches == 0, "recorded a match with no winner yet")
+    GK.db.history = false
+    sim.winner = 0
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(#GK.db.matches == 0, "recorded with recording turned off")
+    GK.db.history = true
+end)
+
+scenario("the history window opens and shows the totals", function()
+    wipe(GK.db.matches)
+    newMatch()
+    sim.scores = { myRow() }
+    sim.winner = 0
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    sim.printed = {}
+    SlashCmdList.WSGFOREVER("history")
+    check(sim.showing("1 matches") ~= nil and sim.showing("1 won") ~= nil, "summary line missing")
+    check(sim.showing("Warsong Gulch") ~= nil, "match row missing")
+    SlashCmdList.WSGFOREVER("history")
+    sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
+end)
+
 if #failures > 0 then
     sim.realPrint(#failures .. " failure(s) in " .. count .. " scenarios:")
     for _, f in ipairs(failures) do sim.realPrint("  FAIL " .. f) end

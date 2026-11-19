@@ -37,6 +37,8 @@ local SECTIONS = {
             "Gives everyone raid assist when you lead a battleground." },
         { "battleMap", "Battlefield map dots", "Teammates as bigger class-coloured dots.",
             "Shows teammates on the battlefield map as bigger dots in their class colours. /fc scale map and /fc scale mapdots change the sizes." },
+        { "history", "Record match history", "Keeps a record of every finished battleground.",
+            "Keeps the result, score and your scoreboard line for every battleground you finish. /fc history shows them." },
         { "minimapButton", "Minimap button", "The button that opens this page.",
             "The minimap button that opens this page. /fc minimap brings it back." },
     } },
@@ -140,6 +142,13 @@ local function BuildPage(parent, x, y)
     local reset = MakeButton(parent, third, GK.ResetLayout)
     reset:SetText("Reset positions and sizes")
     reset:SetPoint("LEFT", page.test, "RIGHT", 8, 0)
+    y = y - 30
+    local history = MakeButton(parent, third, function()
+        local h = GK.modules.History
+        if h then h:Toggle() end
+    end)
+    history:SetText("Match history")
+    history:SetPoint("TOPLEFT", x, y)
     y = y - 32
     local hint = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     hint:SetPoint("TOPLEFT", x, y)

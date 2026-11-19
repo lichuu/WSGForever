@@ -31,6 +31,9 @@ Teammates show as larger dots in their class colours. `/fc scale map` and `/fc s
 
 A minimap button opens a settings page for every feature, also listed under Options > AddOns. Every option is a `/fc` command too.
 
+### Match history
+Every battleground you finish is recorded: win or loss, the flag score, how long it took, and your kills, deaths, honor, captures and returns. `/fc history` opens the list with your overall record.
+
 ### Also
 - A flag icon on your team's carrier in the raid frames.
 - The game's carrier frames moved up beside the score.
@@ -45,6 +48,7 @@ Copy the `WSGForever` folder into `World of Warcraft/_forever_/Interface/AddOns/
 - `/fc reset`: reset positions and sizes.
 - `/fc scale`: list sizes; `/fc scale <name> <percent>` sets one (also covers the carrier text and raid flag icon, which can't be scrolled on).
 - `/fc options`: open the settings window (also on the minimap button and under Options > AddOns).
+- `/fc history`: open the match history.
 - `/fc minimap`: show or hide the minimap button.
 - `/fc <toggle>`: turn features on or off (`callouts`, `carriers`, `fcnames`, `blizzfc`, `lowalert`, `fcicon`, `rez`, `enemies`, `assist`).
 - `/fc`: shows help and the current on/off state of every toggle.

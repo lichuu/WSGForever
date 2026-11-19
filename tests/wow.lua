@@ -110,6 +110,7 @@ C_Timer = {}
 function C_Timer.After(delay, fn) sim.timers[#sim.timers + 1] = { at = sim.time + delay, fn = fn } end
 function GetTime() return sim.time end
 function date() return "00:00:00" end
+function time() return math.floor(sim.time) end
 function wipe(t) for k in pairs(t) do t[k] = nil end return t end
 tinsert = table.insert
 function hooksecurefunc(a, b, c)
@@ -121,7 +122,13 @@ end
 function InCombatLockdown() return sim.inCombat or false end
 function GetInstanceInfo() return sim.zone or "Warsong Gulch", sim.instanceType or "pvp", nil, nil, nil, nil, nil, sim.instanceID or 489 end
 function GetZoneText() return sim.zone or "Warsong Gulch" end
-function GetNumBattlefieldScores() return 0 end
+-- The scoreboard: sim.scores is a list of rows as the game returns them,
+-- sim.winner is 0 (Horde), 1 (Alliance) or nil while the match is running.
+sim.scores = {}
+function GetNumBattlefieldScores() return #sim.scores end
+C_PvP = { GetScoreInfo = function(i) return sim.scores[i] end }
+function GetBattlefieldWinner() return sim.winner end
+function GetBattlefieldInstanceRunTime() return sim.runTimeMs or 0 end
 function RequestBattlefieldScoreData() end
 function IsInGroup() return true end
 function IsInRaid() return true end

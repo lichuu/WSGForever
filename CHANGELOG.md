@@ -1,5 +1,8 @@
 # WSGForever
 
+## Unreleased
+- Match history: every battleground you finish is recorded with the result, score, length and your scoreboard line. `/fc history` or the button on the settings page opens it; `/fc record` turns recording off.
+
 ## 0.5.0
 - Battlefield map: teammates show as larger dots in their class colours. `/fc scale map` and `/fc scale mapdots` change the map and dot sizes; `/fc bgmap` turns it off.
 - Shorter descriptions on the settings page so none are cut off.
