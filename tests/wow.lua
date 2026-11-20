@@ -152,6 +152,14 @@ function RequestBattlefieldScoreData() end
 function GetNumGroupMembers() return 0 end
 function IsInGroup() return true end
 function IsInRaid() return true end
+-- Hidden addon-to-addon messages: what the addon sent is kept in sim.sent.
+sim.sent = {}
+sim.version = "0.6.0"
+C_ChatInfo = {
+    RegisterAddonMessagePrefix = function() return true end,
+    SendAddonMessage = function(prefix, msg, channel) sim.sent[#sim.sent + 1] = { prefix = prefix, msg = msg, channel = channel } end,
+}
+function GetAddOnMetadata(_, field) if field == "Version" then return sim.version end end
 function UnitIsGroupLeader() return false end
 function GetCVarBool() return false end
 function GetCursorPosition() return 0, 0 end

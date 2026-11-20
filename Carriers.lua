@@ -294,8 +294,32 @@ local function Anchor()
     end
 end
 
+-- Hidden buttons for the Key Bindings menu: target or ping a carrier by key.
+_G["BINDING_NAME_CLICK WSGForeverBindTargetEFC:LeftButton"] = "Target enemy flag carrier"
+_G["BINDING_NAME_CLICK WSGForeverBindPingEFC:LeftButton"] = "Ping enemy flag carrier (Attack)"
+_G["BINDING_NAME_CLICK WSGForeverBindPingFC:LeftButton"] = "Ping our flag carrier (Assist)"
+local bindButtons = {}
+local function MakeBindButtons()
+    for _, name in ipairs({ "TargetEFC", "PingEFC", "PingFC" }) do
+        local b = CreateFrame("Button", "WSGForeverBind" .. name, UIParent, "SecureActionButtonTemplate")
+        b:RegisterForClicks("AnyUp", "AnyDown")
+        b:Hide()
+        bindButtons[name] = b
+    end
+end
+
 local function ApplyMacros()
     if InCombatLockdown() then return end
+    if bindButtons.PingEFC then
+        local unit = GK.EnemyCarrierUnit() or "arena1"
+        bindButtons.TargetEFC:SetAttribute("type", "target")
+        bindButtons.TargetEFC:SetAttribute("unit", unit)
+        bindButtons.PingEFC:SetAttribute("type", "macro")
+        bindButtons.PingEFC:SetAttribute("macrotext", "/ping [@" .. unit .. "] attack")
+        local ours = GK.GetOurFC()
+        bindButtons.PingFC:SetAttribute("type", "macro")
+        bindButtons.PingFC:SetAttribute("macrotext", ours and ("/targetexact " .. ours .. "\n/ping [@target] assist\n/targetlasttarget") or "")
+    end
     for flag, s in pairs(state) do
         local b = buttons[flag]
         if flag == OurFlag() then
@@ -575,6 +599,7 @@ end
 function FC:Init()
     buttons.Alliance = MakeButton("Alliance")
     buttons.Horde = MakeButton("Horde")
+    MakeBindButtons()
     labels.Alliance = MakeLabel()
     labels.Horde = MakeLabel()
     MakeLowBanner()

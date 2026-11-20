@@ -442,6 +442,7 @@ local function Help()
     print("  /fc sync           - sync rez timer with your group")
     print("  /fc options        - open the settings window")
     print("  /fc history        - open the match history")
+    print("  /fc who            - who in your group has WSGForever, and their version")
     print("  /fc minimap        - show or hide the minimap button")
     print("  Turn a feature on or off:")
     for _, t in ipairs(toggleList) do
@@ -485,6 +486,9 @@ SlashCmdList.WSGFOREVER = function(input)
     elseif cmd == "options" or cmd == "config" or cmd == "settings" then
         local o = GK.modules.Options
         if o then o:Toggle() end
+    elseif cmd == "who" then
+        local peers = GK.modules.Peers
+        if peers then peers:Print() end
     elseif cmd == "history" then
         local h = GK.modules.History
         if h then h:Toggle() end

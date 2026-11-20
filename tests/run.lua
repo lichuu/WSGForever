@@ -269,6 +269,59 @@ scenario("battlegrounds import from Nova Instance Tracker once, dungeons are ski
     check(GK.modules.History:ImportNova() == nil, "import without Nova should report nothing to read")
 end)
 
+-- Key bindings and the group version check ------------------------------------------
+
+scenario("every key binding presses a button that exists and has a name in the menu", function()
+    local f = assert(io.open(dir .. "/Bindings.xml")); local xml = f:read("*a"); f:close()
+    local clicks, n = 0, 0
+    for name in xml:gmatch('<Binding name="([^"]+)"') do
+        n = n + 1
+        check(_G["BINDING_NAME_" .. name] ~= nil, "no menu label for binding " .. name)
+        local button = name:match("^CLICK (%S+):LeftButton$")
+        if button then
+            clicks = clicks + 1
+            check(_G[button] ~= nil, "binding presses a button that does not exist: " .. button)
+        end
+    end
+    check(n == 31 and clicks == 29, "expected 31 bindings with 29 button presses, got " .. n .. " and " .. clicks)
+    check(BINDING_HEADER_WSGFOREVER == "WSGForever", "bindings header missing")
+    check(WSGForeverCallout1.msg == "EFC Is Alliance Flag Room" and WSGForeverCallout26.msg:find("LOW") ~= nil, "callout buttons out of order")
+    -- the carrier keys point at the carrier slot once someone is carrying
+    sim.setCarrier(1, enemy)
+    sim.run(1)
+    check(WSGForeverBindPingEFC:GetAttribute("macrotext") == "/ping [@arena1] attack", "ping key not aimed at the enemy carrier")
+    check(WSGForeverBindTargetEFC:GetAttribute("unit") == "arena1", "target key not aimed at the enemy carrier")
+end)
+
+scenario("the group version check hears others, ignores itself, and mentions a newer version once", function()
+    local peers = GK.modules.Peers
+    check(peers.Newer("0.7.0", "0.6.0") and peers.Newer("v0.6.1", "0.6.0") and peers.Newer("0.6.0", "0.6.0-beta1"), "newer versions not recognised")
+    check(not peers.Newer("0.6.0", "0.6.0") and not peers.Newer("0.5.9", "0.6.0") and not peers.Newer("0.6.0-beta1", "0.6.0")
+        and not peers.Newer("dev", "0.6.0") and not peers.Newer("0.7.0", "dev"), "older, equal or unreadable versions counted as newer")
+    sim.sent = {}
+    sim.fire("GROUP_ROSTER_UPDATE")
+    sim.run(40)
+    sim.fire("GROUP_ROSTER_UPDATE")
+    local mine = 0
+    for _, m in ipairs(sim.sent) do if m.prefix == "WSGForeverV" and m.msg == "0.6.0" then mine = mine + 1 end end
+    check(mine >= 1, "never announced its own version")
+    sim.printed = {}
+    sim.fire("CHAT_MSG_ADDON", "WSGForeverV", "0.6.0", "INSTANCE_CHAT", "Cheat Jump")
+    sim.fire("CHAT_MSG_ADDON", "WSGForeverV", "0.7.0", "INSTANCE_CHAT", "Isaac Braums")
+    sim.fire("CHAT_MSG_ADDON", "WSGForeverV", "0.8.0", "INSTANCE_CHAT", "Hella Slick")
+    sim.fire("CHAT_MSG_ADDON", "WSGForeverV", "9.9.9", "INSTANCE_CHAT", "Test-Player") -- our own message coming back
+    sim.fire("CHAT_MSG_ADDON", "SomeOtherAddon", "0.9.0", "INSTANCE_CHAT", "Nobody")
+    local notices = 0
+    for _, line in ipairs(sim.printed) do if line:find("newer WSGForever") then notices = notices + 1 end end
+    check(notices == 1, "expected one newer-version notice, got " .. notices)
+    check(peers:Summary():find("^3 other players") ~= nil, "summary wrong: " .. peers:Summary())
+    sim.printed = {}
+    SlashCmdList.WSGFOREVER("who")
+    local listed = table.concat(sim.printed, " | ")
+    check(listed:find("Hella Slick  0.8.0") and listed:find("You have version 0.6.0"), "who list wrong: " .. listed)
+    sim.printed = {}
+end)
+
 if #failures > 0 then
     sim.realPrint(#failures .. " failure(s) in " .. count .. " scenarios:")
     for _, f in ipairs(failures) do sim.realPrint("  FAIL " .. f) end

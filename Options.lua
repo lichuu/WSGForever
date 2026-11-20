@@ -343,15 +343,39 @@ local function BuildMinimapButton()
         GameTooltip:AddLine("Left click: settings", 1, 1, 1)
         GameTooltip:AddLine("Right click: move or lock frames", 1, 1, 1)
         GameTooltip:AddLine("Drag: move this button", 1, 1, 1)
+        local peers = GK.modules.Peers
+        if peers then GameTooltip:AddLine(peers:Summary(), 0.6, 0.6, 0.65) end
         GameTooltip:Show()
     end)
     b:SetScript("OnLeave", GameTooltip_Hide)
     return b
 end
 
+BINDING_NAME_WSGFOREVER_SETTINGS = "Open settings"
+BINDING_NAME_WSGFOREVER_HISTORY = "Open match history"
+
+-- A launcher for info bars and minimap-button collectors, when one is installed.
+local function RegisterLauncher()
+    local stub = _G.LibStub
+    local ldb = stub and stub("LibDataBroker-1.1", true)
+    if not ldb then return end
+    ldb:NewDataObject("WSGForever", {
+        type = "launcher", icon = ICON, text = "WSGForever",
+        OnClick = function(_, button)
+            if button == "RightButton" then Options:Toggle("history") else Options:Toggle("settings") end
+        end,
+        OnTooltipShow = function(tip)
+            tip:AddLine("WSGForever")
+            tip:AddLine("Left click: settings", 1, 1, 1)
+            tip:AddLine("Right click: match history", 1, 1, 1)
+        end,
+    })
+end
+
 function Options:Init()
     minimap = BuildMinimapButton()
     PlaceOnMinimap()
+    pcall(RegisterLauncher)
     local ok, err = pcall(RegisterWithGame)
     if not ok then GK.Print("|cffff4f4fCouldn't add settings to the game options:|r " .. tostring(err)) end
 end

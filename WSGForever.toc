@@ -17,4 +17,5 @@ BlizzCarriers.lua
 RaidFlag.lua
 BattleMap.lua
 History.lua
+Peers.lua
 Options.lua

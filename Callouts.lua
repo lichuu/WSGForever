@@ -13,17 +13,31 @@ local SPOTS = {
 
 local rows = { {}, {}, {} }
 for _, s in ipairs(SPOTS) do
-    rows[1][#rows[1] + 1] = { label = BLUE .. s[1], icon = ALLY_ICON, msg = "EFC Is Alliance " .. s[2] }
-    rows[2][#rows[2] + 1] = { label = RED .. s[1], icon = HORDE_ICON, msg = "EFC Is Horde " .. s[2] }
+    rows[1][#rows[1] + 1] = { label = BLUE .. s[1], icon = ALLY_ICON, msg = "EFC Is Alliance " .. s[2], bind = "Callout: Alliance " .. s[2] }
+    rows[2][#rows[2] + 1] = { label = RED .. s[1], icon = HORDE_ICON, msg = "EFC Is Horde " .. s[2], bind = "Callout: Horde " .. s[2] }
 end
 rows[3] = {
-    { label = CYAN .. "MID", icon = MID_ICON, msg = "EFC Is Midfield" },
-    { label = CYAN .. "TREE", icon = MID_ICON, msg = "EFC Is Mid (Tree Stump)" },
-    { label = CYAN .. "TOP", icon = MID_ICON, msg = "EFC Is TOPSIDE (Alternating Ramp/GY/TOT)" },
-    { label = GOLD .. "PICK", icon = FLAG_ICON, msg = "---PICK UP FLAG---" },
-    { label = GOLD .. "CAP", icon = FLAG_ICON, msg = "---CAP---" },
-    { label = RED .. "LOW", icon = FLAG_ICON, msg = ">>> EFC LOW - NUKE <<<" },
+    { label = CYAN .. "MID", icon = MID_ICON, msg = "EFC Is Midfield", bind = "Callout: Midfield" },
+    { label = CYAN .. "TREE", icon = MID_ICON, msg = "EFC Is Mid (Tree Stump)", bind = "Callout: Tree Stump" },
+    { label = CYAN .. "TOP", icon = MID_ICON, msg = "EFC Is TOPSIDE (Alternating Ramp/GY/TOT)", bind = "Callout: Topside" },
+    { label = GOLD .. "PICK", icon = FLAG_ICON, msg = "---PICK UP FLAG---", bind = "Callout: Pick up flag" },
+    { label = GOLD .. "CAP", icon = FLAG_ICON, msg = "---CAP---", bind = "Callout: Cap" },
+    { label = RED .. "LOW", icon = FLAG_ICON, msg = ">>> EFC LOW - NUKE <<<", bind = "Callout: Enemy carrier low" },
 }
+
+-- Every button has a fixed name (WSGForeverCallout1..26, row by row) so it can
+-- be bound to a key in the game's Key Bindings menu: see Bindings.xml.
+BINDING_HEADER_WSGFOREVER = "WSGForever"
+do
+    local n = 0
+    for _, row in ipairs(rows) do
+        for _, spec in ipairs(row) do
+            n = n + 1
+            spec.name = "WSGForeverCallout" .. n
+            _G["BINDING_NAME_CLICK " .. spec.name .. ":LeftButton"] = spec.bind
+        end
+    end
+end
 
 local SIZE, GAP = 34, 2
 
@@ -51,7 +65,7 @@ local function UpdateMacros()
 end
 
 local function MakeButton(parent, spec)
-    local b = CreateFrame("Button", nil, parent, "SecureActionButtonTemplate")
+    local b = CreateFrame("Button", spec.name, parent, "SecureActionButtonTemplate")
     b:SetSize(SIZE, SIZE)
     b:RegisterForClicks("AnyUp", "AnyDown")
     b:SetAttribute("type", "macro")

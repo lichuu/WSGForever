@@ -1,0 +1,38 @@
+<Bindings>
+	<!-- Key bindings for the game's Key Bindings menu. CLICK bindings press one of the addon's buttons. -->
+	<Binding name="WSGFOREVER_SETTINGS" header="WSGFOREVER" category="ADDONS">
+		WSGForever.modules.Options:Toggle("settings")
+	</Binding>
+	<Binding name="WSGFOREVER_HISTORY" category="ADDONS">
+		WSGForever.modules.Options:Toggle("history")
+	</Binding>
+	<Binding name="CLICK WSGForeverBindTargetEFC:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverBindPingEFC:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverBindPingFC:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout1:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout2:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout3:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout4:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout5:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout6:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout7:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout8:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout9:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout10:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout11:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout12:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout13:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout14:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout15:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout16:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout17:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout18:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout19:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout20:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout21:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout22:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout23:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout24:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout25:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverCallout26:LeftButton" category="ADDONS"/>
+</Bindings>
