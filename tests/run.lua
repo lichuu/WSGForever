@@ -141,6 +141,7 @@ scenario("every command and the settings window run without errors", function()
     local slash = SlashCmdList.WSGFOREVER
     slash("")
     check(sim.showing("Carrier health and drop timer") ~= nil, "plain /fc did not open the settings window")
+    check(sim.showing("^version 0%.6%.0$") ~= nil, "version not shown in the window")
     slash("options")
     check(sim.showing("Carrier health and drop timer") == nil, "/fc options did not close the open window")
     sim.printed = {}

@@ -14,13 +14,7 @@ local seen = {}       -- name -> { version, at }
 local lastSent = 0
 local told = false    -- "a newer version is out" is said once per session
 
-local function MyVersion()
-    local get = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
-    local v = get and get("WSGForever", "Version")
-    -- A copy straight from the repository has a placeholder, not a number.
-    if type(v) ~= "string" or v:find("@") then return "dev" end
-    return v
-end
+local MyVersion = GK.Version
 
 -- "v0.6.0-beta1" -> 0, 6, 0, false (true when it is a full release).
 local function Parse(v)

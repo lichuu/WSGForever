@@ -211,6 +211,10 @@ local function BuildWindow()
     hot:SetColorTexture(0.8, 0.15, 0.1, 0.6)
     close:SetScript("OnClick", function() f:Hide() end)
 
+    local version = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    version:SetPoint("RIGHT", close, "LEFT", -6, 0)
+    version:SetText(GK.Version() == "dev" and "development copy" or ("version " .. GK.Version()))
+
     -- Two tabs, each with its own body below the title bar.
     local body = { settings = CreateFrame("Frame", nil, f), history = CreateFrame("Frame", nil, f) }
     for _, b in pairs(body) do
@@ -264,6 +268,9 @@ local function RegisterWithGame()
     local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", PAD, -16)
     title:SetText("WSGForever")
+    local version = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    version:SetPoint("BOTTOMLEFT", title, "BOTTOMRIGHT", 10, 2)
+    version:SetText(GK.Version() == "dev" and "development copy" or ("version " .. GK.Version()))
     BuildPage(panel, PAD, -52)
     panel:SetScript("OnShow", function() Options:Sync() end)
     category = Settings.RegisterCanvasLayoutCategory(panel, "WSGForever")

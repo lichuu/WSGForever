@@ -4,6 +4,7 @@
 - Key bindings: every callout, plus "target enemy flag carrier", "ping enemy flag carrier", "ping our flag carrier", "open settings" and "open match history", can be bound in the game's Key Bindings menu under WSGForever.
 - `/fc who` lists who else in your group has WSGForever and their version, and you are told once when someone has a newer one.
 - A launcher for info bars and minimap-button collectors, when one is installed.
+- The settings window shows which version you have.
 - `/fc` now opens the settings window, and `/fc help` lists the chat commands. The per-feature commands such as `/fc enemies` still work but are no longer listed, since each is a checkbox.
 
 ## 0.6.0-beta1

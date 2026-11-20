@@ -42,6 +42,15 @@ function GK.Plain(v)
     return v
 end
 
+-- The installed version, such as "0.6.0" or "0.6.0-beta1". A copy straight
+-- from the repository has a placeholder in its place and reports "dev".
+function GK.Version()
+    local get = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+    local v = get and get(ADDON, "Version")
+    if type(v) ~= "string" or v:find("@") then return "dev" end
+    return (v:gsub("^v", ""))
+end
+
 function GK.Print(...)
     print("|cff61f7ffWSGForever|r:", ...)
 end
