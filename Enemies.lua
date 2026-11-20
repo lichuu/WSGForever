@@ -6,13 +6,32 @@ local _, GK = ...
 -- Deaths come from the scoreboard, so dead/alive works even when unseen.
 
 local MAX_ROWS = 15
-local ROW_H, GAP = 24, 3
-local ICON_W = ROW_H
-local BAR_W = 164
-local ROW_W = ICON_W + 1 + BAR_W
-local POWER_H = 3
 local HEADER_H = 20
+local FONT = "Fonts\\FRIZQT__.TTF"
 local FLAT = "Interface\\Buttons\\WHITE8X8"
+local BLIZZARD_BAR = "Interface\\TargetingFrame\\UI-StatusBar"
+
+-- Styles: the sizes, bar texture and colouring of the rows. "dark" draws
+-- grey bars with the name in the class colour and missing health in red.
+local STYLES = {
+    flat = { rowH = 24, barW = 164, gap = 3, powerH = 3, font = 11, texture = FLAT, shine = true },
+    classic = { rowH = 22, barW = 164, gap = 2, powerH = 4, font = 11, texture = BLIZZARD_BAR },
+    compact = { rowH = 17, barW = 124, gap = 1, powerH = 2, font = 10, texture = FLAT },
+    dark = { rowH = 24, barW = 164, gap = 3, powerH = 3, font = 11, texture = FLAT, dark = true },
+}
+-- In the order the settings page lists them: { name, label }.
+GK.enemyStyles = { { "flat", "Flat" }, { "classic", "Classic" }, { "compact", "Compact" }, { "dark", "Dark" } }
+
+local style
+local ROW_H, GAP, ICON_W, BAR_W, ROW_W, POWER_H, NAME_W
+local function UseStyle(name)
+    style = STYLES[name] or STYLES.flat
+    ROW_H, GAP, BAR_W, POWER_H = style.rowH, style.gap, style.barW, style.powerH
+    ICON_W = ROW_H
+    ROW_W = ICON_W + 1 + BAR_W
+    NAME_W = BAR_W - 5 - 50 -- bar minus left pad and HP area
+end
+UseStyle("flat")
 local CLASS_ICONS = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
 local SKULL = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
 local FACTION_COLOR = { [0] = { 0.86, 0.22, 0.20 }, [1] = { 0.27, 0.56, 0.90 } } -- Horde, Alliance
@@ -63,6 +82,26 @@ local function AddBorder(frame, layer, r, g, b, a, inset)
     function edges:SetShown(shown) for _, t in ipairs(self) do t:SetShown(shown) end end
     function edges:SetColor(...) for _, t in ipairs(self) do t:SetColorTexture(...) end end
     return edges
+end
+
+-- Everything about a row that depends on the style.
+local function LayoutRow(b, i)
+    b:SetSize(ROW_W, ROW_H)
+    b:ClearAllPoints()
+    b:SetPoint("TOPLEFT", 0, -HEADER_H - (i - 1) * (ROW_H + GAP))
+    b.icon:SetSize(ICON_W, ROW_H)
+    b.bar:ClearAllPoints()
+    b.bar:SetPoint("TOPLEFT", b.icon, "TOPRIGHT", 1, 0)
+    b.bar:SetPoint("BOTTOMRIGHT", 0, POWER_H + 1)
+    b.bar:SetStatusBarTexture(style.texture)
+    b.missing:SetTexture(style.texture)
+    b.power:SetStatusBarTexture(style.texture)
+    b.shine:SetHeight((ROW_H - POWER_H - 1) / 2)
+    b.shine:SetShown(style.shine and true or false)
+    b.name:SetFont(FONT, style.font, "")
+    b.hp:SetFont(FONT, style.font, "")
+    b.skull:SetSize(math.min(14, ROW_H - 6), math.min(14, ROW_H - 6))
+    b.flag:SetSize(ROW_H - 2, ROW_H - 2)
 end
 
 local function MakeRow(parent, i)
@@ -193,16 +232,29 @@ local function MakeRow(parent, i)
     b.targets:SetPoint("RIGHT", b, "LEFT", -8, 0)
     b.targets:SetTextColor(1, 0.82, 0)
 
-    b:SetPoint("TOPLEFT", 0, -HEADER_H - (i - 1) * (ROW_H + GAP))
+    LayoutRow(b, i)
     b:Hide()
     return b
+end
+
+-- Colours of a living enemy's bar and name, by style.
+local function PaintAlive(row)
+    local r, g, b = unpack(row.classColor)
+    if style.dark then
+        row.bar:SetStatusBarColor(0.17, 0.17, 0.19)
+        row.missing:SetVertexColor(0.5, 0.1, 0.1, 1)
+        row.name:SetTextColor(r, g, b)
+    else
+        row.bar:SetStatusBarColor(r, g, b)
+        row.missing:SetVertexColor(r * 0.22, g * 0.22, b * 0.22, 1)
+        row.name:SetTextColor(1, 1, 1)
+    end
 end
 
 local function SetClassLook(row, token)
     local r, g, b = GK.ClassColor(token)
     row.classColor = { r, g, b }
-    row.bar:SetStatusBarColor(r, g, b)
-    row.missing:SetVertexColor(r * 0.22, g * 0.22, b * 0.22, 1)
+    PaintAlive(row)
     local coords = token and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[token]
     if coords then
         row.icon:SetTexCoord(coords[1] + 0.02, coords[2] - 0.02, coords[3] + 0.02, coords[4] - 0.02)
@@ -267,17 +319,12 @@ local function SetDeadLook(row, dead)
         row.missing:SetVertexColor(0.1, 0.1, 0.1, 1)
         row.name:SetTextColor(0.55, 0.55, 0.55)
     else
-        row.bar:SetStatusBarColor(unpack(row.classColor))
-        local r, g, b = unpack(row.classColor)
-        row.missing:SetVertexColor(r * 0.22, g * 0.22, b * 0.22, 1)
-        row.name:SetTextColor(1, 1, 1)
+        PaintAlive(row)
     end
 end
 
 -- Shows the full name if it fits, else "First L.", else the first name
 -- (anything still too long gets cut off with "...").
-local NAME_W = BAR_W - 5 - 50 -- bar minus left pad and HP area
-
 local function SetFittedName(fs, name)
     local maxW = NAME_W
     fs:SetText(name)
@@ -508,6 +555,7 @@ local function UpdateHealth()
 end
 
 function Enemies:Init()
+    UseStyle(GK.db.enemyStyle)
     local f = CreateFrame("Frame", "WSGForeverEnemies", UIParent)
     f:SetSize(ROW_W, HEADER_H + MAX_ROWS * (ROW_H + GAP))
 
@@ -584,7 +632,38 @@ function Enemies:UpdateHeader(alive, total)
         waiting > 0 and string.format(" |cffffd100+%d|r", waiting) or ""))
 end
 
+-- Redraws the rows in the chosen style. The rows are click-to-target
+-- buttons, which the game only lets us resize out of combat.
+local pendingStyle = false
+function Enemies:ApplyStyle()
+    if not self.frame then return end
+    if InCombatLockdown() then pendingStyle = true return false end
+    pendingStyle = false
+    UseStyle(GK.db.enemyStyle)
+    self.frame:SetSize(ROW_W, HEADER_H + MAX_ROWS * (ROW_H + GAP))
+    for i, row in ipairs(rows) do
+        LayoutRow(row, i)
+        if row.enemy and row.classColor then
+            SetDeadLook(row, row.isDead and true or false)
+            SetFittedName(row.name, GK.ShortName(row.enemy.name))
+        end
+    end
+    return true
+end
+
+function GK.SetEnemyStyle(name)
+    if not STYLES[name] then
+        local names = {}
+        for _, s in ipairs(GK.enemyStyles) do names[#names + 1] = s[1] end
+        GK.Print("Enemy frame styles: " .. table.concat(names, ", ") .. ". Now: " .. GK.db.enemyStyle .. ".")
+        return
+    end
+    GK.db.enemyStyle = name
+    if Enemies:ApplyStyle() == false then GK.Print("The enemy frames change style when combat ends.") end
+end
+
 function Enemies:OutOfCombat()
+    if pendingStyle then self:ApplyStyle() end
     if pendingRoster then ApplyRoster(pendingRoster) end
     if GK.InBattleground() and RequestBattlefieldScoreData then RequestBattlefieldScoreData() end
 end

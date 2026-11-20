@@ -25,6 +25,7 @@ local defaults = {
     enemyScale = 1,
     battleMap = true, -- class-coloured, larger teammate dots on the battlefield map
     history = true, -- keep a record of finished battlegrounds
+    enemyStyle = "flat", -- look of the enemy frames: flat, classic, compact or dark
     minimapButton = true,
     minimapAngle = 205, -- degrees around the minimap
 }
@@ -461,6 +462,7 @@ local function Help()
     print("  /fc test           - preview everything outside a battleground")
     print("  /fc reset          - reset frame positions and sizes")
     print("  /fc scale          - list sizes; /fc scale <name> <percent> sets one")
+    print("  /fc style <name>   - enemy frame style: flat, classic, compact or dark")
     print("  /fc minimap        - show or hide the minimap button")
     print("  /fc sync           - share your rez timer with your group")
     print("  /fc debug          - what the carrier tracking can see, for bug reports")
@@ -501,6 +503,10 @@ SlashCmdList.WSGFOREVER = function(input)
     elseif cmd == "options" or cmd == "config" or cmd == "settings" then
         local o = GK.modules.Options
         if o then o:Toggle() end
+    elseif cmd == "style" then
+        GK.SetEnemyStyle(args)
+        local o = GK.modules.Options
+        if o then o:Sync() end
     elseif cmd == "who" then
         local peers = GK.modules.Peers
         if peers then peers:Print() end

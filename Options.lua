@@ -132,6 +132,17 @@ local function BuildPage(parent, x, y)
 
     y = lowest - 10
     local width = COL_W * 2 + 20
+    MakeHeader(parent, "Enemy frame style", x, y, width)
+    y = y - 30
+    page.styles = {}
+    local quarter = (width - 24) / 4
+    for n, s in ipairs(GK.enemyStyles) do
+        local b = MakeButton(parent, quarter, function() GK.SetEnemyStyle(s[1]) end)
+        b:SetText(s[2])
+        b:SetPoint("TOPLEFT", x + (n - 1) * (quarter + 8), y)
+        page.styles[s[1]] = b
+    end
+    y = y - 40
     MakeHeader(parent, "Layout", x, y, width)
     y = y - 30
     local third = (width - 16) / 3
@@ -162,6 +173,14 @@ function Options:Sync()
     if minimap then minimap:SetShown(GK.db.minimapButton) end
     for _, page in ipairs(pages) do
         for _, c in ipairs(page.checks) do c.mark:SetShown(GK.db[c.key] and true or false) end
+        for name, b in pairs(page.styles) do
+            -- The chosen style stays lit, with white text.
+            if GK.db.enemyStyle == name then
+                b:LockHighlight() b:SetNormalFontObject("GameFontHighlight")
+            else
+                b:UnlockHighlight() b:SetNormalFontObject("GameFontNormal")
+            end
+        end
         page.move:SetText(GK.db.locked and "Move and resize frames" or "Lock frames")
         page.test:SetText(GK.testMode and "End preview" or "Preview")
     end

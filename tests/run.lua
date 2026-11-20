@@ -282,6 +282,27 @@ scenario("battlegrounds import from Nova Instance Tracker once, dungeons are ski
     check(GK.modules.History:ImportNova() == nil, "import without Nova should report nothing to read")
 end)
 
+scenario("enemy frame styles resize the rows, wait for combat to end, and reject unknown names", function()
+    local slash = SlashCmdList.WSGFOREVER
+    slash("style compact")
+    check(GK.db.enemyStyle == "compact" and WSGForeverEnemy1:GetHeight() == 17, "compact style not applied")
+    sim.inCombat = true
+    slash("style flat")
+    check(WSGForeverEnemy1:GetHeight() == 17, "rows were resized during combat")
+    sim.inCombat = false
+    sim.fire("PLAYER_REGEN_ENABLED")
+    check(WSGForeverEnemy1:GetHeight() == 24 and WSGForeverEnemies:GetWidth() == 24 + 1 + 164, "style not applied after combat")
+    slash("style nonsense")
+    check(GK.db.enemyStyle == "flat", "an unknown style name changed the setting")
+    slash("test") -- with sample enemies on screen
+    for _, s in ipairs(GK.enemyStyles) do
+        slash("style " .. s[1])
+        sim.run(0.5)
+    end
+    slash("style flat")
+    slash("test")
+end)
+
 -- Key bindings and the group version check ------------------------------------------
 
 scenario("every key binding presses a button that exists and has a name in the menu", function()

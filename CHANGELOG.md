@@ -1,5 +1,8 @@
 # WSGForever
 
+## Unreleased
+- Enemy frame styles: choose Flat, Classic, Compact or Dark on the settings tab, or with `/fc style <name>`.
+
 ## 0.6.1
 - Fixed pinging or focusing an enemy who is too far away to target: it used to ping or focus whoever you already had targeted. Now it does nothing.
 

@@ -70,8 +70,11 @@ function methods:GetName() return self.name end
 function methods:GetObjectType() return self.kind end
 function methods:GetChildren() return unpack(self.children) end
 function methods:GetRegions() return unpack(self.regions) end
-function methods:GetWidth() return 100 end
-function methods:GetHeight() return 20 end
+function methods:SetSize(w, h) self.w, self.h = w, h end
+function methods:SetWidth(w) self.w = w end
+function methods:SetHeight(h) self.h = h end
+function methods:GetWidth() return self.w or 100 end
+function methods:GetHeight() return self.h or 20 end
 function methods:GetStringWidth() return 50 end
 function methods:GetUnboundedStringWidth() return 50 end
 function methods:GetScale() return self.scale or 1 end

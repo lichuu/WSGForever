@@ -14,7 +14,7 @@ Carrier health sits beside the score. A countdown shows when a dropped flag retu
 ### Enemy frames
 ![The enemy team list](media/gallery/enemy-frames.jpg)
 
-The whole enemy team with class, health, mana, range, who is dead and how many teammates are targeting each player. The flag carrier is highlighted. Left click targets, right click sets focus, middle click pings.
+The whole enemy team with class, health, mana, range, who is dead and how many teammates are targeting each player. The flag carrier is highlighted. Left click targets, right click sets focus, middle click pings. Pick a look on the settings tab: Flat, Classic, Compact or Dark.
 
 ### Callout bar
 ![The callout bar](media/gallery/callout-bar.jpg)
