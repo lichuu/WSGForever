@@ -1,18 +1,13 @@
 # WSGForever
 
-## Unreleased
+## 0.6.0
+- Match history: every battleground you finish is recorded with the result, flag score, length and your scoreboard line (kills, deaths, honor, captures, returns). It is on the new Match history tab of the settings window, or `/fc history`. `/fc record` turns recording off.
+- If you use Nova Instance Tracker, the history tab can import the battlegrounds it already recorded.
 - Key bindings: every callout, plus "target enemy flag carrier", "ping enemy flag carrier", "ping our flag carrier", "open settings" and "open match history", can be bound in the game's Key Bindings menu under WSGForever.
 - `/fc who` lists who else in your group has WSGForever and their version, and you are told once when someone has a newer one.
-- A launcher for info bars and minimap-button collectors, when one is installed.
-- The settings window shows which version you have.
 - `/fc` now opens the settings window, and `/fc help` lists the chat commands. The per-feature commands such as `/fc enemies` still work but are no longer listed, since each is a checkbox.
-
-## 0.6.0-beta1
-A beta: match history has not yet recorded a live match, and its tab has not been checked in game. Please report what you see.
-
-- Match history: every battleground you finish is recorded with the result, flag score, length and your scoreboard line (kills, deaths, honor, captures, returns).
-- The settings window now has two tabs, Settings and Match history. `/fc history` opens the history tab; `/fc record` turns recording off.
-- If you use Nova Instance Tracker, the history tab can import the battlegrounds it already recorded.
+- The settings window shows which version you have.
+- A launcher for info bars and minimap-button collectors, when one is installed.
 
 ## 0.5.0
 - Battlefield map: teammates show as larger dots in their class colours. `/fc scale map` and `/fc scale mapdots` change the map and dot sizes; `/fc bgmap` turns it off.
