@@ -41,9 +41,16 @@ function methods:HookScript(name, fn)
 end
 function methods:RegisterEvent(e) self.events[e] = true end
 function methods:UnregisterEvent(e) self.events[e] = nil end
-function methods:Show() self.shown = true end
-function methods:Hide() self.shown = false end
-function methods:SetShown(on) self.shown = on and true or false end
+-- Showing and hiding run the frame's OnShow / OnHide scripts, as the game does.
+function methods:SetShown(on)
+    on = on and true or false
+    if on == self.shown then return end
+    self.shown = on
+    local fn = self.scripts[on and "OnShow" or "OnHide"]
+    if fn then fn(self) end
+end
+function methods:Show() self:SetShown(true) end
+function methods:Hide() self:SetShown(false) end
 function methods:IsShown() return self.shown end
 function methods:IsVisible()
     local w = self

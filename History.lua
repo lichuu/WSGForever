@@ -2,7 +2,7 @@ local _, GK = ...
 
 -- Match history: one record per finished battleground (result, score, your
 -- line from the scoreboard), kept across sessions, with a window to browse it.
--- /fc history opens the window. Every value read from the game is checked
+-- It shows as a tab in the settings window (/fc history). Every value read from the game is checked
 -- first, because Forever hides some of them from addons.
 
 local History = {}
@@ -15,12 +15,12 @@ local FLAT = "Interface\\Buttons\\WHITE8X8"
 
 -- Column layout: { title, width, how to align }.
 local COLUMNS = {
-    { "Date", 96, "LEFT" }, { "Battleground", 130, "LEFT" }, { "Result", 52, "LEFT" }, { "Score", 46, "CENTER" },
+    { "Date", 96, "LEFT" }, { "Battleground", 124, "LEFT" }, { "Result", 52, "LEFT" }, { "Score", 46, "CENTER" },
     { "Time", 50, "RIGHT" }, { "Kills", 44, "RIGHT" }, { "Deaths", 50, "RIGHT" }, { "Honor", 54, "RIGHT" },
     { "Caps", 40, "RIGHT" }, { "Returns", 56, "RIGHT" },
 }
 
-local window
+local views = {} -- each place the list is drawn
 local inMatch, saved, startedAt = false, false, nil
 local offset = 0
 
@@ -207,56 +207,23 @@ local function Summary()
         #list, wins, losses, played > 0 and math.floor(wins / played * 100 + 0.5) or 0, honor, kills, deaths)
 end
 
-local function Build()
-    local width = 28
+-- Draws the history inside parent, starting at (x, y). Returns its height.
+function History:BuildView(parent, x, y)
+    local width = 0
     for _, c in ipairs(COLUMNS) do width = width + c[2] end
-    local f = CreateFrame("Frame", "WSGForeverHistory", UIParent, "BackdropTemplate")
-    f:SetFrameStrata("DIALOG")
-    f:SetBackdrop({ bgFile = FLAT, edgeFile = FLAT, edgeSize = 1 })
-    f:SetBackdropColor(0.06, 0.06, 0.07, 0.96)
-    f:SetBackdropBorderColor(0, 0, 0, 1)
-    f:SetSize(width, 34 + 30 + 22 + ROWS * ROW_H + 34)
-    f:SetPoint("CENTER", 0, 20)
-    f:SetMovable(true)
-    f:SetClampedToScreen(true)
-    f:EnableMouse(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
-    f:Hide()
-    tinsert(UISpecialFrames, "WSGForeverHistory")
+    local v = { parent = parent, rows = {} }
 
-    local bar = f:CreateTexture(nil, "ARTWORK")
-    bar:SetColorTexture(1, 1, 1, 0.05)
-    bar:SetPoint("TOPLEFT", 1, -1)
-    bar:SetPoint("TOPRIGHT", -1, -1)
-    bar:SetHeight(34)
-    local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 14, -9)
-    title:SetText("Match history")
-    local close = CreateFrame("Button", nil, f)
-    close:SetSize(34, 34)
-    close:SetPoint("TOPRIGHT", -1, -1)
-    local x = close:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-    x:SetPoint("CENTER", 0, 1)
-    x:SetText("x")
-    local hot = close:CreateTexture(nil, "HIGHLIGHT")
-    hot:SetAllPoints()
-    hot:SetColorTexture(0.8, 0.15, 0.1, 0.6)
-    close:SetScript("OnClick", function() f:Hide() end)
-
-    f.summary = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    f.summary:SetPoint("TOPLEFT", 14, -44)
+    v.summary = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    v.summary:SetPoint("TOPLEFT", x, y)
 
     -- Column titles, then the rows.
-    local left = 14
-    f.rows = {}
+    local top = y - 24
     for r = 0, ROWS do
         local row = {}
-        local cx = left
+        local cx = x
         for c, col in ipairs(COLUMNS) do
-            local fs = f:CreateFontString(nil, "OVERLAY", r == 0 and "GameFontNormalSmall" or "GameFontHighlightSmall")
-            fs:SetPoint("TOPLEFT", cx, -66 - r * ROW_H - (r > 0 and 2 or 0))
+            local fs = parent:CreateFontString(nil, "OVERLAY", r == 0 and "GameFontNormalSmall" or "GameFontHighlightSmall")
+            fs:SetPoint("TOPLEFT", cx, top - r * ROW_H - (r > 0 and 2 or 0))
             fs:SetWidth(col[2] - 6)
             fs:SetJustifyH(col[3])
             fs:SetWordWrap(false)
@@ -264,19 +231,20 @@ local function Build()
             row[c] = fs
             cx = cx + col[2]
         end
-        if r > 0 then f.rows[r] = row end
+        if r > 0 then v.rows[r] = row end
     end
-    local line = f:CreateTexture(nil, "ARTWORK")
+    local line = parent:CreateTexture(nil, "ARTWORK")
     line:SetColorTexture(1, 0.82, 0, 0.25)
     line:SetHeight(1)
-    line:SetPoint("TOPLEFT", left, -66 - ROW_H + 3)
-    line:SetWidth(width - 28)
+    line:SetPoint("TOPLEFT", x, top - ROW_H + 3)
+    line:SetWidth(width)
 
-    f.page = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    f.page:SetPoint("BOTTOMLEFT", 14, 12)
-    local clear = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    local bottom = top - (ROWS + 1) * ROW_H - 12
+    v.page = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    v.page:SetPoint("TOPLEFT", x, bottom - 5)
+    local clear = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     clear:SetSize(110, 22)
-    clear:SetPoint("BOTTOMRIGHT", -12, 8)
+    clear:SetPoint("TOPRIGHT", parent, "TOPLEFT", x + width, bottom)
     clear:SetText("Clear history")
     clear:SetScript("OnClick", function()
         -- Ask twice: this can't be undone.
@@ -288,12 +256,12 @@ local function Build()
         clear:SetText(clear.armed and "Really clear?" or "Clear history")
         History:Update()
     end)
-    f:SetScript("OnHide", function() clear.armed = false clear:SetText("Clear history") end)
+    parent:HookScript("OnHide", function() clear.armed = false clear:SetText("Clear history") end)
 
     -- Only offered when Nova Instance Tracker is installed.
     if type(_G.NITdatabase) == "table" then
-        local import = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-        import:SetSize(210, 22)
+        local import = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+        import:SetSize(230, 22)
         import:SetPoint("RIGHT", clear, "LEFT", -8, 0)
         import:SetText("Import from Nova Instance Tracker")
         import:SetScript("OnClick", function()
@@ -305,36 +273,40 @@ local function Build()
         end)
     end
 
-    f:EnableMouseWheel(true)
-    f:SetScript("OnMouseWheel", function(_, delta)
+    parent:EnableMouseWheel(true)
+    parent:SetScript("OnMouseWheel", function(_, delta)
         local last = math.max(0, #GK.db.matches - ROWS)
         offset = math.max(0, math.min(last, offset - delta * 3))
         History:Update()
     end)
-    return f
+    parent:HookScript("OnShow", function() offset = 0 History:Update() end)
+    views[#views + 1] = v
+    return y - bottom + 30
 end
 
 function History:Update()
-    if not window or not window:IsShown() then return end
     local list = GK.db.matches
-    window.summary:SetText(Summary())
-    for r, row in ipairs(window.rows) do
-        local m = list[offset + r]
-        local cells = m and Cells(m)
-        for c, fs in ipairs(row) do fs:SetText(cells and tostring(cells[c]) or "") end
-    end
-    if #list > ROWS then
-        window.page:SetText(string.format("%d-%d of %d. Scroll for more.", offset + 1, math.min(#list, offset + ROWS), #list))
-    else
-        window.page:SetText("")
+    for _, v in ipairs(views) do
+        if v.parent:IsVisible() then
+            v.summary:SetText(Summary())
+            for r, row in ipairs(v.rows) do
+                local m = list[offset + r]
+                local cells = m and Cells(m)
+                for c, fs in ipairs(row) do fs:SetText(cells and tostring(cells[c]) or "") end
+            end
+            if #list > ROWS then
+                v.page:SetText(string.format("%d-%d of %d. Scroll for more.", offset + 1, math.min(#list, offset + ROWS), #list))
+            else
+                v.page:SetText("")
+            end
+        end
     end
 end
 
+-- Opens the settings window on its history tab.
 function History:Toggle()
-    if not window then window = Build() end
-    window:SetShown(not window:IsShown())
-    offset = 0
-    self:Update()
+    local o = GK.modules.Options
+    if o then o:Toggle("history") end
 end
 
 -- Events ----------------------------------------------------------------------

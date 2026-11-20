@@ -1,8 +1,11 @@
 # WSGForever
 
-## Unreleased
-- Match history: every battleground you finish is recorded with the result, score, length and your scoreboard line. `/fc history` or the button on the settings page opens it; `/fc record` turns recording off.
-- If you use Nova Instance Tracker, the history window can import the battlegrounds it already recorded.
+## 0.6.0-beta1
+A beta: match history has not yet recorded a live match, and its tab has not been checked in game. Please report what you see.
+
+- Match history: every battleground you finish is recorded with the result, flag score, length and your scoreboard line (kills, deaths, honor, captures, returns).
+- The settings window now has two tabs, Settings and Match history. `/fc history` opens the history tab; `/fc record` turns recording off.
+- If you use Nova Instance Tracker, the history tab can import the battlegrounds it already recorded.
 
 ## 0.5.0
 - Battlefield map: teammates show as larger dots in their class colours. `/fc scale map` and `/fc scale mapdots` change the map and dot sizes; `/fc bgmap` turns it off.

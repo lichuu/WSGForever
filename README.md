@@ -32,7 +32,7 @@ Teammates show as larger dots in their class colours. `/fc scale map` and `/fc s
 A minimap button opens a settings page for every feature, also listed under Options > AddOns. Every option is a `/fc` command too.
 
 ### Match history
-Every battleground you finish is recorded: win or loss, the flag score, how long it took, and your kills, deaths, honor, captures and returns. `/fc history` opens the list with your overall record.
+Every battleground you finish is recorded: win or loss, the flag score, how long it took, and your kills, deaths, honor, captures and returns. It lives on the Match history tab of the settings window (`/fc history`), with your overall record at the top. If you use Nova Instance Tracker, you can import the battlegrounds it already recorded.
 
 ### Also
 - A flag icon on your team's carrier in the raid frames.

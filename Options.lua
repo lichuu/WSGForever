@@ -1,15 +1,15 @@
 local _, GK = ...
 
--- A minimap button and a settings page. The page shows in its own window
--- (minimap button, /fc options) and under Options > AddOns. Everything on it
--- is also a /fc command; both change the same saved settings.
+-- A minimap button and the addon's window, which has two tabs: settings and
+-- match history. The settings page also shows under Options > AddOns.
+-- Everything on it is also a /fc command; both change the same saved settings.
 
 local Options = {}
 GK.RegisterModule("Options", Options)
 
 local ICON = "Interface\\Icons\\INV_Misc_Rune_07"
 local FLAT = "Interface\\Buttons\\WHITE8X8"
-local COL_W, ROW_H, PAD = 270, 38, 18
+local COL_W, ROW_H, PAD = 296, 38, 18
 local PAGE_W = PAD + COL_W + 20 + COL_W + PAD
 
 -- Settings in the order shown: { setting, name, one line, tooltip }.
@@ -143,10 +143,7 @@ local function BuildPage(parent, x, y)
     reset:SetText("Reset positions and sizes")
     reset:SetPoint("LEFT", page.test, "RIGHT", 8, 0)
     y = y - 30
-    local history = MakeButton(parent, third, function()
-        local h = GK.modules.History
-        if h then h:Toggle() end
-    end)
+    local history = MakeButton(parent, third, function() Options:Open("history") end)
     history:SetText("Match history")
     history:SetPoint("TOPLEFT", x, y)
     y = y - 32
@@ -214,8 +211,46 @@ local function BuildWindow()
     hot:SetColorTexture(0.8, 0.15, 0.1, 0.6)
     close:SetScript("OnClick", function() f:Hide() end)
 
-    local height = BuildPage(f, PAD, -50)
-    f:SetSize(PAGE_W, 50 + height + 8)
+    -- Two tabs, each with its own body below the title bar.
+    local body = { settings = CreateFrame("Frame", nil, f), history = CreateFrame("Frame", nil, f) }
+    for _, b in pairs(body) do
+        b:SetPoint("TOPLEFT", 0, -35)
+        b:SetPoint("BOTTOMRIGHT")
+    end
+    local settingsHeight = BuildPage(body.settings, PAD, -16) + 16
+    local historyHeight = GK.modules.History:BuildView(body.history, PAD, -16) + 16
+    f:SetSize(PAGE_W, 35 + math.max(settingsHeight, historyHeight) + 8)
+
+    local tabs = {}
+    local function MakeTab(name, label, after)
+        local t = CreateFrame("Button", nil, f)
+        t.text = t:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        t.text:SetPoint("CENTER")
+        t.text:SetText(label)
+        t:SetSize(t.text:GetStringWidth() + 24, 34)
+        t:SetPoint("LEFT", after, "RIGHT", after == title and 28 or 0, 0)
+        t.line = t:CreateTexture(nil, "OVERLAY")
+        t.line:SetColorTexture(1, 0.82, 0, 1)
+        t.line:SetHeight(2)
+        t.line:SetPoint("BOTTOMLEFT", 8, 4)
+        t.line:SetPoint("BOTTOMRIGHT", -8, 4)
+        t:SetScript("OnClick", function() f.Select(name) end)
+        tabs[name] = t
+        return t
+    end
+    MakeTab("history", "Match history", MakeTab("settings", "Settings", title))
+
+    function f.Select(name)
+        f.tab = name
+        for n, b in pairs(body) do b:SetShown(n == name) end
+        for n, t in pairs(tabs) do
+            t.line:SetShown(n == name)
+            if n == name then t.text:SetTextColor(1, 1, 1) else t.text:SetTextColor(0.6, 0.6, 0.65) end
+        end
+        Options:Sync()
+        if name == "history" then GK.modules.History:Update() end
+    end
+    f.Select("settings")
     return f
 end
 
@@ -235,10 +270,21 @@ local function RegisterWithGame()
     Settings.RegisterAddOnCategory(category)
 end
 
-function Options:Toggle()
+-- Shows the window on a tab ("settings" or "history").
+function Options:Open(tab)
     if not window then window = BuildWindow() end
-    window:SetShown(not window:IsShown())
-    self:Sync()
+    window:Show()
+    window.Select(tab or "settings")
+end
+
+-- Opens on that tab, or closes the window if it is already showing it.
+function Options:Toggle(tab)
+    tab = tab or "settings"
+    if window and window:IsShown() and window.tab == tab then
+        window:Hide()
+    else
+        self:Open(tab)
+    end
 end
 
 -- Minimap button ------------------------------------------------------------
