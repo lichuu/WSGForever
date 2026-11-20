@@ -318,7 +318,7 @@ local function ApplyMacros()
         bindButtons.PingEFC:SetAttribute("macrotext", "/ping [@" .. unit .. "] attack")
         local ours = GK.GetOurFC()
         bindButtons.PingFC:SetAttribute("type", "macro")
-        bindButtons.PingFC:SetAttribute("macrotext", ours and ("/targetexact " .. ours .. "\n/ping [@target] assist\n/targetlasttarget") or "")
+        bindButtons.PingFC:SetAttribute("macrotext", ours and GK.OnNamedTarget(ours, "/ping [@target,exists] assist") or "")
     end
     for flag, s in pairs(state) do
         local b = buttons[flag]
@@ -341,7 +341,7 @@ local function ApplyMacros()
             b:SetAttribute("type3", "macro")
             b:SetAttribute("macrotext", s.holder and ("/targetexact " .. s.holder) or "")
             -- Middle click pings Assist on our carrier.
-            b:SetAttribute("macrotext3", s.holder and ("/targetexact " .. s.holder .. "\n/ping [@target] assist\n/targetlasttarget") or "")
+            b:SetAttribute("macrotext3", s.holder and GK.OnNamedTarget(s.holder, "/ping [@target,exists] assist") or "")
         end
         b:SetWidth(math.max(1, b.text:GetStringWidth()))
     end

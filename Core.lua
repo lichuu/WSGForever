@@ -51,6 +51,14 @@ function GK.Version()
     return (v:gsub("^v", ""))
 end
 
+-- A macro that briefly targets a player by name, does one thing to them, and
+-- puts your target back. The target is cleared first and the action only
+-- runs if the name was found: otherwise, when they are too far away to
+-- target, the action would land on whoever you already had targeted.
+function GK.OnNamedTarget(name, action)
+    return "/cleartarget\n/targetexact " .. name .. "\n" .. action .. "\n/targetlasttarget"
+end
+
 function GK.Print(...)
     print("|cff61f7ffWSGForever|r:", ...)
 end

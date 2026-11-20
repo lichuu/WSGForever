@@ -304,6 +304,10 @@ scenario("every key binding presses a button that exists and has a name in the m
     sim.run(1)
     check(WSGForeverBindPingEFC:GetAttribute("macrotext") == "/ping [@arena1] attack", "ping key not aimed at the enemy carrier")
     check(WSGForeverBindTargetEFC:GetAttribute("unit") == "arena1", "target key not aimed at the enemy carrier")
+    -- pinging by name must not fall through to your current target when they are out of range
+    say("The Alliance Flag was picked up by Cheat Jump!")
+    check(WSGForeverBindPingFC:GetAttribute("macrotext") ==
+        "/cleartarget\n/targetexact Cheat Jump\n/ping [@target,exists] assist\n/targetlasttarget", "ping-by-name macro wrong: " .. tostring(WSGForeverBindPingFC:GetAttribute("macrotext")))
 end)
 
 scenario("the group version check hears others, ignores itself, and mentions a newer version once", function()

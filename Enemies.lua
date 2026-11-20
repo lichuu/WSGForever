@@ -352,8 +352,8 @@ local function ApplyRoster(list)
         if e then
             row.enemy = e
             row:SetAttribute("macrotext1", "/targetexact " .. e.name)
-            row:SetAttribute("macrotext2", "/targetexact " .. e.name .. "\n/focus\n/targetlasttarget")
-            row:SetAttribute("macrotext3", "/targetexact " .. e.name .. "\n/ping [@target] attack\n/targetlasttarget")
+            row:SetAttribute("macrotext2", GK.OnNamedTarget(e.name, "/focus [@target,exists]"))
+            row:SetAttribute("macrotext3", GK.OnNamedTarget(e.name, "/ping [@target,exists] attack"))
             SetClassLook(row, e.classToken)
             SetFittedName(row.name, GK.ShortName(e.name))
             row.wasDead = nil

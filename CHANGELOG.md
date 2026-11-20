@@ -1,5 +1,8 @@
 # WSGForever
 
+## Unreleased
+- Fixed pinging or focusing an enemy who is too far away to target: it used to ping or focus whoever you already had targeted. Now it does nothing.
+
 ## 0.6.0
 - Match history: every battleground you finish is recorded with the result, flag score, length and your scoreboard line (kills, deaths, honor, captures, returns). It is on the new Match history tab of the settings window, or `/fc history`. `/fc record` turns recording off.
 - If you use Nova Instance Tracker, the history tab can import the battlegrounds it already recorded.
