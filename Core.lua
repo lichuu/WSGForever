@@ -379,7 +379,9 @@ end)
 
 -- Slash command -----------------------------------------------------------
 
--- Toggle commands, in help order: { command, setting, what it does }.
+-- Per-feature toggles: { command, setting, what it does }. Each one is a
+-- checkbox in the settings window now, so they are no longer listed in the
+-- help; they still work so existing macros keep working.
 local toggleList = {
     { "callouts", "callouts", "EFC location callout buttons" },
     { "carriers", "carriers", "carrier HP and flag drop timer by the flags" },
@@ -434,21 +436,17 @@ local function SetScale(args)
 end
 
 local function Help()
-    GK.Print("commands:")
+    GK.Print("commands (everything else is in the settings window):")
+    print("  /fc                - open the settings window")
+    print("  /fc history        - open the match history")
+    print("  /fc who            - who in your group has WSGForever, and their version")
     print("  /fc unlock | lock  - move frames (scroll on them to resize)")
     print("  /fc test           - preview everything outside a battleground")
     print("  /fc reset          - reset frame positions and sizes")
     print("  /fc scale          - list sizes; /fc scale <name> <percent> sets one")
-    print("  /fc sync           - sync rez timer with your group")
-    print("  /fc options        - open the settings window")
-    print("  /fc history        - open the match history")
-    print("  /fc who            - who in your group has WSGForever, and their version")
     print("  /fc minimap        - show or hide the minimap button")
-    print("  Turn a feature on or off:")
-    for _, t in ipairs(toggleList) do
-        local on = GK.db[t[2]] and "|cff4fff4fon|r" or "|cffff4f4foff|r"
-        print(string.format("  /fc %-10s %s - %s", t[1], on, t[3]))
-    end
+    print("  /fc sync           - share your rez timer with your group")
+    print("  /fc debug          - what the carrier tracking can see, for bug reports")
 end
 
 function GK.SetTestMode(on)
@@ -511,6 +509,10 @@ SlashCmdList.WSGFOREVER = function(input)
         GK.db[key] = not GK.db[key]
         GK.Print(cmd .. " " .. (GK.db[key] and "on" or "off"))
         GK.Refresh()
+    elseif cmd == "" then
+        -- Plain /fc opens the settings window; /fc help lists the commands.
+        local o = GK.modules.Options
+        if o then o:Open("settings") else Help() end
     else
         Help()
     end

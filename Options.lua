@@ -151,7 +151,7 @@ local function BuildPage(parent, x, y)
     hint:SetPoint("TOPLEFT", x, y)
     hint:SetWidth(width)
     hint:SetJustifyH("LEFT")
-    hint:SetText("While moving, drag the blue boxes and scroll on one to resize it. Preview shows everything outside a battleground. Type /fc for the same settings as commands.")
+    hint:SetText("While moving, drag the blue boxes and scroll on one to resize it. Preview shows everything outside a battleground. Type /fc help for the chat commands.")
     y = y - 30
 
     pages[#pages + 1] = page

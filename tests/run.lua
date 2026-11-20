@@ -139,7 +139,19 @@ end)
 
 scenario("every command and the settings window run without errors", function()
     local slash = SlashCmdList.WSGFOREVER
-    for _, cmd in ipairs({ "", "test", "test", "unlock", "lock", "scale", "scale map 130", "scale callouts 110",
+    slash("")
+    check(sim.showing("Carrier health and drop timer") ~= nil, "plain /fc did not open the settings window")
+    slash("options")
+    check(sim.showing("Carrier health and drop timer") == nil, "/fc options did not close the open window")
+    sim.printed = {}
+    slash("help")
+    local help = table.concat(sim.printed, " | ")
+    check(help:find("/fc history") and help:find("/fc scale") and not help:find("/fc enemies"), "help text wrong: " .. help)
+    local before = GK.db.enemies
+    slash("enemies")
+    check(GK.db.enemies ~= before, "an unlisted feature command stopped working")
+    slash("enemies")
+    for _, cmd in ipairs({ "help", "test", "test", "unlock", "lock", "scale", "scale map 130", "scale callouts 110",
         "options", "options", "minimap", "minimap", "debug", "reset", "callouts", "callouts", "carriers", "carriers",
         "fcnames", "fcnames", "blizzfc", "blizzfc", "lowalert", "lowalert", "fcicon", "fcicon", "rez", "rez",
         "enemies", "enemies", "assist", "assist", "bgmap", "bgmap" }) do

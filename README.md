@@ -46,16 +46,17 @@ Every callout can be bound to a key in the game's Key Bindings menu, under WSGFo
 Copy the `WSGForever` folder into `World of Warcraft/_forever_/Interface/AddOns/`.
 
 ## Commands
+Everything is in the settings window; these are the chat commands that remain.
+
+- `/fc`: open the settings window (also on the minimap button and under Options > AddOns).
+- `/fc history`: open the match history.
+- `/fc who`: who else in your group has WSGForever, and their version.
 - `/fc unlock` / `/fc lock`: move frames by dragging; scroll over a frame to resize it.
 - `/fc test`: preview everything outside a battleground.
 - `/fc reset`: reset positions and sizes.
-- `/fc scale`: list sizes; `/fc scale <name> <percent>` sets one (also covers the carrier text and raid flag icon, which can't be scrolled on).
-- `/fc options`: open the settings window (also on the minimap button and under Options > AddOns).
-- `/fc history`: open the match history.
-- `/fc who`: who else in your group has WSGForever, and their version.
+- `/fc scale`: list sizes; `/fc scale <name> <percent>` sets one (also covers the map, map dots, carrier text and raid flag icon, which have no box to scroll on).
 - `/fc minimap`: show or hide the minimap button.
-- `/fc <toggle>`: turn features on or off (`callouts`, `carriers`, `fcnames`, `blizzfc`, `lowalert`, `fcicon`, `rez`, `enemies`, `assist`).
-- `/fc`: shows help and the current on/off state of every toggle.
+- `/fc help`: list these in chat.
 
 ## Tests
 `lua5.1 tests/run.lua .` loads the addon into a small stand-in for the game and replays flag scenarios (drops, hand-offs, captures, returns) plus every command. It checks what the addon decides to show, not how it looks.
