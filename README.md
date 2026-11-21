@@ -14,7 +14,7 @@ Carrier health sits beside the score. A countdown shows when a dropped flag retu
 ### Enemy frames
 ![The enemy team list](media/gallery/enemy-frames.jpg)
 
-The whole enemy team with class, health, mana, range, who is dead and how many teammates are targeting each player. The flag carrier is highlighted. Left click targets, right click sets focus, middle click pings. Pick one of ten looks on the settings tab, including an ElvUI one, and optionally a bar texture and font, including those your other addons share.
+The whole enemy team with class, health, mana, range, who is dead and how many teammates are targeting each player. The flag carrier is highlighted. Left click targets, right click sets focus, middle click pings. Pick one of eleven looks on the settings tab, including ones that follow your ElvUI or EllesmereUI settings, and optionally a bar texture and font, including those your other addons share.
 
 ### Callout bar
 ![The callout bar](media/gallery/callout-bar.jpg)

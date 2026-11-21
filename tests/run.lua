@@ -342,11 +342,27 @@ scenario("the style dropdown lists every style, and picking a style or texture a
     page.textureDrop:Pick("")
     page.fontDrop:Pick("")
     check(GK.db.enemyFont == nil, "Style default should clear the font choice")
-    ElvUI = { { media = { normTex = "Interface\\AddOns\\ElvUI\\Norm", normFont = "Interface\\AddOns\\ElvUI\\Font.ttf" } } }
+    -- With a suite running, its unit frame settings are read; shapes as in ElvUI 15 and EllesmereUI (Nov 2026).
+    slash("test")
+    ElvUI = { { media = { normTex = "Interface\\AddOns\\ElvUI\\Norm", normFont = "Interface\\AddOns\\ElvUI\\Font.ttf" },
+        db = { unitframe = { statusbar = "ElvUI Norm", font = "Expressway", fontSize = 10, fontOutline = "MONOCHROMEOUTLINE",
+            colors = { healthclass = false, health = { r = 0.31, g = 0.31, b = 0.31 } } } } } }
     slash("style elvui")
     check(GK.db.enemyStyle == "elvui" and WSGForeverEnemy1:GetHeight() == 22, "ElvUI style not applied")
-    ElvUI, LibStub = nil, nil
-    slash("style elvui") -- still fine without ElvUI installed
+    EllesmereUI = { GetFontPath = function() return "Interface\\AddOns\\EllesmereUI\\Expressway.TTF" end,
+        GetFontOutlineFlag = function() return "OUTLINE, SLUG" end,
+        GetClassColor = function(token) return { r = 0.5, g = 0.5, b = 0.5 } end }
+    slash("style ellesmere")
+    check(GK.db.enemyStyle == "ellesmere", "EllesmereUI style not applied")
+    -- A suite laid out differently from what we expect must not break anything.
+    ElvUI = { { db = "unexpected", media = 5 } }
+    EllesmereUI = { GetFontPath = function() error("changed") end, GetClassColor = function() error("changed") end }
+    slash("style elvui")
+    slash("style ellesmere")
+    ElvUI, EllesmereUI, LibStub = nil, nil, nil
+    slash("style elvui") -- and both are fine with neither suite installed
+    slash("style ellesmere")
+    slash("test")
     slash("style flat")
     slash("options")
 end)

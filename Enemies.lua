@@ -26,15 +26,16 @@ local STYLES = {
     slim = { rowH = 14, barW = 150, gap = 1, powerH = 0, font = 10, texture = FLAT },
     large = { rowH = 30, barW = 200, gap = 3, powerH = 4, font = 13, texture = FLAT, shine = true },
     minimal = { rowH = 20, barW = 180, gap = 2, powerH = 0, font = 11, texture = FLAT, noIcon = true },
-    -- Tight rows and outlined text in the manner of ElvUI. When ElvUI is
-    -- running, its own bar texture and font are used.
-    elvui = { rowH = 22, barW = 164, gap = 1, powerH = 3, font = 11, texture = FLAT, outline = true, elv = true },
+    -- Styles that follow a UI suite. When the suite is running, its own unit
+    -- frame texture, font and colours are used; without it, a look in its manner.
+    elvui = { rowH = 22, barW = 164, gap = 1, powerH = 3, font = 11, texture = FLAT, outline = true, suite = "elvui" },
+    ellesmere = { rowH = 22, barW = 164, gap = 2, powerH = 3, font = 11, texture = FLAT, suite = "ellesmere" },
 }
 -- In the order the settings page lists them: { name, label }.
 GK.enemyStyles = {
     { "flat", "Flat" }, { "classic", "Classic" }, { "raid", "Raid frames" }, { "dark", "Dark" },
     { "compact", "Compact" }, { "darkcompact", "Dark compact" }, { "slim", "Slim" }, { "large", "Large" },
-    { "minimal", "Minimal, no class icons" }, { "elvui", "ElvUI" },
+    { "minimal", "Minimal, no class icons" }, { "elvui", "ElvUI" }, { "ellesmere", "EllesmereUI" },
 }
 
 local style
@@ -56,25 +57,84 @@ local function SharedMedia()
     return stub and stub("LibSharedMedia-3.0", true)
 end
 
--- ElvUI's current media (bar texture, font), when ElvUI is running.
-local function ElvMedia()
+-- What a running UI suite says its unit frames look like. Every read is
+-- guarded: a suite that is missing, or laid out differently from the version
+-- these were written against, simply contributes nothing.
+local SUITES = {}
+
+-- ElvUI: the unit frame bar texture, font, size and outline, and the plain
+-- health colour when it is not colouring health by class.
+function SUITES.elvui()
     local e = _G.ElvUI
     e = type(e) == "table" and e[1]
-    local media = type(e) == "table" and e.media
-    return type(media) == "table" and media or nil
+    if type(e) ~= "table" then return nil end
+    local look = {}
+    pcall(function()
+        local media = SharedMedia()
+        local uf = e.db and e.db.unitframe
+        if type(uf) == "table" then
+            if media then
+                look.texture = uf.statusbar and media:Fetch("statusbar", uf.statusbar, true)
+                look.font = uf.font and media:Fetch("font", uf.font, true)
+            end
+            look.fontSize = tonumber(uf.fontSize)
+            local outline = type(uf.fontOutline) == "string" and uf.fontOutline or ""
+            look.flags = outline == "MONOCHROMEOUTLINE" and "MONOCHROME, OUTLINE"
+                or outline == "THICKOUTLINE" and "THICKOUTLINE"
+                or outline:find("OUTLINE") and "OUTLINE" or ""
+            local c = uf.colors
+            if type(c) == "table" and not c.healthclass and type(c.health) == "table" then
+                look.barColor = { c.health.r, c.health.g, c.health.b }
+            end
+        end
+        local m = e.media
+        if type(m) == "table" then
+            look.texture = look.texture or (type(m.normTex) == "string" and m.normTex)
+            look.font = look.font or (type(m.normFont) == "string" and m.normFont)
+        end
+    end)
+    return look
+end
+
+-- EllesmereUI: its global font and outline, and its class colours.
+function SUITES.ellesmere()
+    local e = _G.EllesmereUI
+    if type(e) ~= "table" then return nil end
+    local look = {}
+    pcall(function()
+        local path = e.GetFontPath and e.GetFontPath()
+        if type(path) == "string" then look.font = path end
+        local flags = e.GetFontOutlineFlag and e.GetFontOutlineFlag()
+        if type(flags) == "string" then look.flags = flags end
+    end)
+    if type(e.GetClassColor) == "function" then
+        look.classColor = function(token)
+            local ok, c = pcall(e.GetClassColor, token)
+            if ok and type(c) == "table" and c.r then return c.r, c.g, c.b end
+        end
+    end
+    return look
+end
+
+local function SuiteLook()
+    local read = style.suite and SUITES[style.suite]
+    return read and read() or nil
 end
 
 -- The font for names, health and the header: the player's pick, else the
--- style's. Second result is the outline flag.
+-- suite's, else the style's. Returns the path, the outline flags and the size.
 local function TextFont()
+    local look = SuiteLook()
     local flags = style.outline and "OUTLINE" or ""
+    local size = style.font
+    if look then
+        if look.flags then flags = look.flags end
+        if look.fontSize then size = math.max(8, math.min(16, look.fontSize)) end
+    end
     local name = GK.db and GK.db.enemyFont
     local media = name and SharedMedia()
     local path = media and media:Fetch("font", name, true)
-    if path then return path, flags end
-    local elv = style.elv and ElvMedia()
-    if elv and type(elv.normFont) == "string" then return elv.normFont, flags end
-    return FONT, flags
+    return path or (look and look.font) or FONT, flags, size
 end
 
 -- Names for the settings page: "" is the style's own font.
@@ -98,9 +158,8 @@ local function BarTexture()
         local path = media and media:Fetch("statusbar", name, true)
         if path then return path, true end
     end
-    local elv = style.elv and ElvMedia()
-    if elv and type(elv.normTex) == "string" then return elv.normTex, false end
-    return style.texture, false
+    local look = SuiteLook()
+    return look and look.texture or style.texture, false
 end
 
 -- Names for the settings page: "" is the style's own texture.
@@ -188,10 +247,10 @@ local function LayoutRow(b, i)
     b.power:SetShown(POWER_H > 0)
     b.shine:SetHeight((ROW_H - POWER_H - 1) / 2)
     b.shine:SetShown(style.shine and not custom and true or false)
-    local font, flags = TextFont()
-    b.name:SetFont(font, style.font, flags)
-    b.hp:SetFont(font, style.font, flags)
-    b.targets:SetFont(font, style.font + 1, "OUTLINE")
+    local font, flags, size = TextFont()
+    b.name:SetFont(font, size, flags)
+    b.hp:SetFont(font, size, flags)
+    b.targets:SetFont(font, size + 1, "OUTLINE")
     b.skull:SetSize(math.min(14, ROW_H - 6), math.min(14, ROW_H - 6))
     -- The carrier's flag sits on the class icon, or beside the row without one.
     b.flag:SetSize(ROW_H - 2, ROW_H - 2)
@@ -339,7 +398,19 @@ end
 -- Colours of a living enemy's bar and name, by style.
 local function PaintAlive(row)
     local r, g, b = unpack(row.classColor)
-    if style.dark then
+    local look = SuiteLook()
+    if look and look.classColor then
+        -- The suite's own class colours, if it has one for this class.
+        local r2, g2, b2 = look.classColor(row.classToken)
+        if r2 then r, g, b = r2, g2, b2 end
+    end
+    if look and look.barColor then
+        -- The suite draws health in one plain colour: do the same, and put
+        -- the class colour on the name so classes can still be told apart.
+        row.bar:SetStatusBarColor(unpack(look.barColor))
+        row.missing:SetVertexColor(0.04, 0.04, 0.05, 1)
+        row.name:SetTextColor(r, g, b)
+    elseif style.dark then
         -- Missing health is near black, not a colour: the bar fades when the
         -- enemy is out of range, and a colour behind it would show through.
         row.bar:SetStatusBarColor(0.26, 0.26, 0.29)
@@ -355,6 +426,7 @@ end
 local function SetClassLook(row, token)
     local r, g, b = GK.ClassColor(token)
     row.classColor = { r, g, b }
+    row.classToken = token
     PaintAlive(row)
     local coords = token and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[token]
     if coords then
@@ -752,13 +824,13 @@ function Enemies:ApplyStyle()
     -- the change doesn't take and text set in it stays blank, so set the
     -- fonts and write the names again once it has loaded.
     local function Fonts()
-        local path, flags = TextFont()
-        self.frame.title:SetFont(path, style.font + 1, "OUTLINE")
-        self.frame.count:SetFont(path, style.font + 1, "OUTLINE")
+        local path, flags, size = TextFont()
+        self.frame.title:SetFont(path, size + 1, "OUTLINE")
+        self.frame.count:SetFont(path, size + 1, "OUTLINE")
         for _, row in ipairs(rows) do
-            row.name:SetFont(path, style.font, flags)
-            row.hp:SetFont(path, style.font, flags)
-            row.targets:SetFont(path, style.font + 1, "OUTLINE")
+            row.name:SetFont(path, size, flags)
+            row.hp:SetFont(path, size, flags)
+            row.targets:SetFont(path, size + 1, "OUTLINE")
             if row.enemy then
                 row.name:SetText("")
                 SetFittedName(row.name, GK.ShortName(row.enemy.name))

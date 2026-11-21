@@ -100,7 +100,7 @@ end
 -- A dropdown: a box showing the current choice, and a list that opens under
 -- it. items() returns { { value, label }, ... }; long lists scroll.
 local function MakeDropdown(parent, width, items, current, pick)
-    local VISIBLE, H = 10, 20
+    local VISIBLE, H = 12, 20
     local d = CreateFrame("Button", nil, parent, "BackdropTemplate")
     d:SetSize(width, 24)
     d:SetBackdrop({ bgFile = FLAT, edgeFile = FLAT, edgeSize = 1 })
