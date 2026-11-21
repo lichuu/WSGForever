@@ -269,9 +269,13 @@ scenario("queue pop: nothing while queued, a countdown when it pops, sound only 
     sim.queue[1] = { "queued", "Warsong Gulch" }
     sim.run(0.5)
     check(not WSGForeverQueue:IsShown() and #sim.sounds == 0, "nothing should show or sound while just queued")
+    PVPReadyDialog = CreateFrame("Frame") -- the game's own pop window, open
     sim.queue[1] = { "confirm", "Warsong Gulch", 85 }
     sim.run(0.5)
     check(WSGForeverQueue:IsShown() and sim.showing("is ready: |cff4fff4f1:25|r$") ~= nil, "countdown to enter wrong")
+    local _, anchor = WSGForeverQueue:GetPoint()
+    check(WSGForeverQueue.anchoredTo == PVPReadyDialog, "countdown should sit under the game's pop window")
+    PVPReadyDialog = nil
     check(#sim.sounds == 0, "the pop sound is off by default")
     sim.queue[1] = nil
     sim.run(0.5)

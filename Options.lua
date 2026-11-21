@@ -501,8 +501,6 @@ local function BuildMinimapButton()
         GameTooltip:AddLine("Left click: settings", 1, 1, 1)
         GameTooltip:AddLine("Right click: move or lock frames", 1, 1, 1)
         GameTooltip:AddLine("Drag: move this button", 1, 1, 1)
-        local peers = GK.modules.Peers
-        if peers then GameTooltip:AddLine(peers:Summary(), 0.6, 0.6, 0.65) end
         GameTooltip:Show()
     end)
     b:SetScript("OnLeave", GameTooltip_Hide)

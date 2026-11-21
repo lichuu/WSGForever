@@ -83,6 +83,8 @@ function methods:GetEffectiveScale() return 1 end
 function methods:GetFrameLevel() return 1 end
 function methods:GetFrameStrata() return "MEDIUM" end
 function methods:GetPoint() return "CENTER", nil, "CENTER", 0, 0 end
+function methods:SetPoint(_, rel) if type(rel) == "table" then self.anchoredTo = rel end end
+function methods:ClearAllPoints() self.anchoredTo = nil end
 function methods:GetCenter() return 500, 500 end
 function methods:GetRight() return 600 end
 function methods:GetLeft() return 400 end

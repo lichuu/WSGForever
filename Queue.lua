@@ -41,6 +41,20 @@ local function Draw(row, name, left)
     row:Show()
 end
 
+-- The game's own "Your battleground is ready" window sits where the
+-- countdown would be and covers it. Until the countdown has been dragged
+-- somewhere of its own, it sits just under that window while it is open.
+local function Place()
+    if GK.db.positions[KEY] then return end
+    local dialog = _G.PVPReadyDialog
+    frame:ClearAllPoints()
+    if dialog and dialog:IsShown() then
+        frame:SetPoint("TOP", dialog, "BOTTOM", 0, -8)
+    else
+        GK.RestorePosition(frame)
+    end
+end
+
 local function Update()
     local any = false
     for i = 1, SLOTS do
@@ -68,13 +82,14 @@ local function Update()
         Draw(rows[1], "Warsong Gulch", 85)
         any = true
     end
+    if any then Place() end
     frame:SetShown(any)
 end
 
 function Queue:Init()
     frame = CreateFrame("Frame", "WSGForeverQueue", UIParent)
     frame:SetSize(320, SLOTS * 24)
-    frame:SetFrameStrata("HIGH")
+    frame:SetFrameStrata("DIALOG")
     for i = 1, SLOTS do
         local row = frame:CreateFontString(nil, "OVERLAY")
         row:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
