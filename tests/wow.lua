@@ -196,6 +196,9 @@ sim.queue = {}
 function GetMaxBattlefieldID() return 3 end
 function GetBattlefieldStatus(i) local q = sim.queue[i] if q then return q[1], q[2] end return "none" end
 function GetBattlefieldPortExpiration(i) local q = sim.queue[i] return q and q[3] or 0 end
+-- While queued: sim.queue[i] = { "queued", name, nil, waitedMs, estimateMs }.
+function GetBattlefieldTimeWaited(i) local q = sim.queue[i] return q and q[4] or 0 end
+function GetBattlefieldEstimatedWaitTime(i) local q = sim.queue[i] return q and q[5] or 0 end
 
 local realPrint = print
 function print(...)
