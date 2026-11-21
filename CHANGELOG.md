@@ -1,5 +1,8 @@
 # WSGForever
 
+## Unreleased
+- The match timer now starts when the gates open, not when the battleground is created. It keeps its time through a reload, and works out the start when you join a match already under way.
+
 ## 0.8.0
 - Match timer: a small clock beside the score showing how long the battleground has been running, in every battleground. Drag it anywhere with `/fc unlock`.
 - Fixed the enemy frames emptying after you clicked the Alliance or Horde tab on the game's scoreboard. That tab also limits what addons can see; the addon now waits for the scoreboard to close and switches it back to All.

@@ -262,14 +262,31 @@ scenario("the history tab opens, shows the totals, and switches with the setting
     sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
 end)
 
-scenario("the match timer shows the game's running time, or the time since zoning in", function()
+scenario("the match timer counts from the gates opening", function()
+    GK.db.gateWait = nil
     newMatch()
-    sim.runTimeMs = 754000
+    sim.runTimeMs = 30000 -- half a minute in, still behind the gates
     sim.run(1)
-    check(sim.showing("^12:34$") ~= nil, "timer should show the game's count")
-    sim.runTimeMs = 3725000
+    check(sim.showing("^0:00$") ~= nil, "timer should read 0:00 behind the gates")
+    sim.runTimeMs = 120000
+    say("Let the battle for Warsong Gulch begin!")
+    sim.runTimeMs = 600000 -- whatever the game's own count says from here on
+    sim.run(65.5)
+    check(sim.showing("^1:05$") ~= nil, "timer should count from the gates opening")
+    -- a reload mid-match keeps the start
+    sim.fire("PLAYER_ENTERING_WORLD")
+    sim.run(1)
+    check(sim.showing("^1:06$") ~= nil, "timer lost its start on a reload")
+    -- joining a match already under way: the game's count less the measured wait
+    newMatch()
+    sim.runTimeMs = 420000
+    sim.run(1)
+    check(sim.showing("^5:00$") ~= nil, "a late join should take the gate wait off the game's count")
+    -- a long match shows hours
+    sim.runTimeMs = 3845000
     sim.run(1)
     check(sim.showing("^1:02:05$") ~= nil, "timer should show hours past sixty minutes")
+    -- no count from the game at all: time since zoning in
     sim.runTimeMs = nil
     newMatch()
     sim.run(65.5)
@@ -278,6 +295,7 @@ scenario("the match timer shows the game's running time, or the time since zonin
     check(not WSGForeverMatchTimer:IsShown(), "timer did not turn off")
     SlashCmdList.WSGFOREVER("timer")
     check(WSGForeverMatchTimer:IsShown(), "timer did not turn back on")
+    GK.db.gateWait = nil
     sim.printed = {}
 end)
 

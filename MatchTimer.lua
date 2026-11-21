@@ -1,7 +1,8 @@
 local _, GK = ...
 
 -- A small clock for how long the current battleground has been running,
--- just left of the score at the top of the screen.
+-- counted from the gates opening, just left of the score at the top of the
+-- screen.
 
 local Timer = {}
 GK.RegisterModule("MatchTimer", Timer)
@@ -9,11 +10,41 @@ GK.RegisterModule("MatchTimer", Timer)
 local KEY = "Match timer"
 local frame, enteredAt
 
--- Seconds the match has run: the game's own count if it gives one, else
--- the time since you zoned in.
-local function Elapsed()
+-- The game's own count for this battleground, in seconds. It starts when
+-- the battleground is created, so it includes the wait behind the gates.
+local function GameCount()
     local ms = GetBattlefieldInstanceRunTime and GK.Plain(GetBattlefieldInstanceRunTime())
     if type(ms) == "number" and ms > 0 then return ms / 1000 end
+end
+
+local function Map()
+    return GK.Plain((GetInstanceInfo())) or "?"
+end
+
+-- The gates opened: time from now. Saved, so a reload mid-match keeps it.
+-- How far the game's count had got is remembered per battleground, to work
+-- out the start when you join a match that is already running.
+local function GatesOpened()
+    GK.db.matchStart = { at = time(), map = Map() }
+    local count = GameCount()
+    if count then
+        GK.db.gateWait = GK.db.gateWait or {}
+        GK.db.gateWait[Map()] = count
+    end
+end
+
+-- Seconds since the gates opened.
+local function Elapsed()
+    local start = GK.db.matchStart
+    if start and start.map == Map() then return math.max(0, time() - start.at) end
+    local count = GameCount()
+    if count then
+        -- Joined after the gates opened, or they haven't yet: take the wait
+        -- off the game's count (two minutes if we have never measured it).
+        local wait = GK.db.gateWait and GK.db.gateWait[Map()]
+        if wait then return math.max(0, count - wait) end
+        return count < 125 and 0 or count
+    end
     if enteredAt then return GetTime() - enteredAt end
 end
 
@@ -47,9 +78,20 @@ function Timer:Init()
 
     frame:RegisterEvent("PLAYER_ENTERING_WORLD")
     frame:RegisterEvent("UPDATE_UI_WIDGET")
-    frame:SetScript("OnEvent", GK.Safe("Match timer event", function(_, event)
+    frame:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
+    frame:SetScript("OnEvent", GK.Safe("Match timer event", function(_, event, msg)
         if event == "PLAYER_ENTERING_WORLD" then
             enteredAt = GK.InBattleground() and (enteredAt or GetTime()) or nil
+            -- Out of the battleground: the next match starts its own clock.
+            if not GK.InBattleground() then GK.db.matchStart = nil end
+        elseif event == "CHAT_MSG_BG_SYSTEM_NEUTRAL" then
+            -- "Let the battle for Warsong Gulch begin!" / "The battle has begun!"
+            msg = GK.Plain(msg)
+            if type(msg) == "string" and GK.InBattleground() then
+                local lower = msg:lower()
+                if lower:find("begun") or lower:find("begin!") then GatesOpened() end
+            end
+            return
         end
         Place()
     end))
