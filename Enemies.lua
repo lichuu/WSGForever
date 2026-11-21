@@ -802,6 +802,7 @@ end
 
 function Enemies:Refresh()
     if not self.frame then return end
+    for _, row in ipairs(rows) do row.name:SetShown(GK.db.enemyNames) end
     local show = GK.db.enemies and (GK.InBattleground() or GK.ShouldShowAll())
     self.frame:SetShown(show)
     if show then

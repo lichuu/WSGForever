@@ -25,6 +25,7 @@ local defaults = {
     enemyScale = 1,
     battleMap = true, -- class-coloured, larger teammate dots on the battlefield map
     history = true, -- keep a record of finished battlegrounds
+    enemyNames = true, -- names on the enemy frames
     enemyStyle = "flat", -- look of the enemy frames, one of GK.enemyStyles
     minimapButton = true,
     minimapAngle = 205, -- degrees around the minimap
@@ -412,6 +413,7 @@ local toggleList = {
     { "assist", "autoAssist", "give everyone assist when you lead" },
     { "bgmap", "battleMap", "battlefield map: teammates as larger class-coloured dots" },
     { "record", "history", "record each finished battleground in the match history" },
+    { "names", "enemyNames", "names on the enemy frames" },
 }
 local toggles = { raidflag = "raidFlag" } -- old name still works
 for _, t in ipairs(toggleList) do toggles[t[1]] = t[2] end

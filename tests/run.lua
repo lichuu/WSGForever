@@ -292,6 +292,10 @@ scenario("enemy frame styles resize the rows, wait for combat to end, and reject
     sim.inCombat = false
     sim.fire("PLAYER_REGEN_ENABLED")
     check(WSGForeverEnemy1:GetHeight() == 24 and WSGForeverEnemies:GetWidth() == 24 + 1 + 164, "style not applied after combat")
+    slash("names")
+    check(GK.db.enemyNames == false and not WSGForeverEnemy1.name:IsShown(), "names did not hide")
+    slash("names")
+    check(GK.db.enemyNames == true and WSGForeverEnemy1.name:IsShown(), "names did not come back")
     slash("style nonsense")
     check(GK.db.enemyStyle == "flat", "an unknown style name changed the setting")
     slash("test") -- with sample enemies on screen

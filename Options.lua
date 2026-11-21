@@ -31,6 +31,8 @@ local SECTIONS = {
             "One-click location callouts to battleground chat." },
         { "enemies", "Enemy frames", "Enemy team with class, health and range.",
             "The enemy team with class, health and range. Left click targets, right click focuses, middle click pings." },
+        { "enemyNames", "Enemy names", "Names on the enemy frames.",
+            "Shows each enemy's name on their row. Turn it off for bars and class icons only." },
         { "rezTimer", "Resurrection timer", "Countdown to the next graveyard wave.",
             "Countdown to the next graveyard wave, in every battleground." },
         { "autoAssist", "Auto assist", "Raid assist for everyone when you lead.",
