@@ -1,0 +1,6 @@
+## Interface: 16001
+## Title: WSGForever Shots
+## Notes: Development only: stages captions for WSGForever's screenshots. Not part of the addon download.
+## SavedVariables: WSGForeverShotsDB
+
+WSGForeverShots.lua
