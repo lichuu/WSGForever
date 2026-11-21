@@ -294,6 +294,19 @@ scenario("the match timer counts from the gates opening", function()
     check(sim.showing("^0:40$") ~= nil, "timer should start when the game's countdown ends, got " .. tostring(sim.showing("^%d+:%d%d$")))
     newMatch()
     sim.runTimeMs = 420000
+    -- where the game reports the match's own duration, that wins: zero while waiting, exact on a late join
+    C_PvP.GetActiveMatchState = function() return sim.matchState end
+    C_PvP.GetActiveMatchDuration = function() return sim.matchSeconds end
+    sim.matchState, sim.matchSeconds = 2, 0
+    sim.run(1)
+    check(sim.showing("^0:00$") ~= nil, "timer should read 0:00 while the game says the match is waiting to start")
+    sim.matchState, sim.matchSeconds = 3, 95
+    sim.run(1)
+    check(sim.showing("^1:35$") ~= nil, "timer should show the game's own match duration")
+    sim.matchSeconds = sim.SECRET -- hidden from addons: fall back to our own signals
+    sim.run(1)
+    check(sim.showing("^5:00$") ~= nil, "a hidden duration should fall back, got " .. tostring(sim.showing("^%d+:%d%d$")))
+    C_PvP.GetActiveMatchState, C_PvP.GetActiveMatchDuration = nil, nil
     -- a long match shows hours
     sim.runTimeMs = 3845000
     sim.run(1)

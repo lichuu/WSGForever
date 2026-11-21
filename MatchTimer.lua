@@ -40,8 +40,32 @@ local function GatesOpened(inSeconds)
     end
 end
 
+-- The game's own answer, where it has one: how long the match itself has
+-- been active, which is zero behind the gates and right on a late join.
+local function ServerDuration()
+    local api = C_PvP
+    if not (api and api.GetActiveMatchDuration) then return nil end
+    local function ask(fn)
+        if not fn then return nil end
+        local ok, v = pcall(fn)
+        return ok and GK.Plain(v) or nil
+    end
+    local state = ask(api.GetActiveMatchState)
+    if type(state) == "number" then
+        -- 1 and 2: waiting to start. 3 and 4: under way. 5: finished.
+        if state == 1 or state == 2 then return 0 end
+        if state < 3 or state > 5 then return nil end
+    elseif not (ask(api.IsMatchActive) or ask(api.IsMatchComplete)) then
+        return nil
+    end
+    local seconds = ask(api.GetActiveMatchDuration)
+    if type(seconds) == "number" and seconds >= 0 and seconds < 86400 then return seconds end
+end
+
 -- Seconds since the gates opened.
 local function Elapsed()
+    local server = ServerDuration()
+    if server then return server end
     local start = GK.db.matchStart
     if start and start.map == Map() then return math.max(0, time() - start.at) end
     local count = GameCount()
@@ -87,11 +111,15 @@ function Timer:Init()
     frame:RegisterEvent("UPDATE_UI_WIDGET")
     frame:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
     pcall(frame.RegisterEvent, frame, "START_TIMER") -- the game's own "battle begins in" countdown
+    pcall(frame.RegisterEvent, frame, "PVP_MATCH_ACTIVE") -- the match itself has started
     frame:SetScript("OnEvent", GK.Safe("Match timer event", function(_, event, msg, seconds)
         if event == "PLAYER_ENTERING_WORLD" then
             enteredAt = GK.InBattleground() and (enteredAt or GetTime()) or nil
             -- Out of the battleground: the next match starts its own clock.
             if not GK.InBattleground() then GK.db.matchStart = nil end
+        elseif event == "PVP_MATCH_ACTIVE" then
+            if GK.InBattleground() then GatesOpened() end
+            return
         elseif event == "START_TIMER" then
             seconds = GK.Plain(seconds)
             if type(seconds) == "number" and seconds >= 0 and seconds < 600 and GK.InBattleground() then
