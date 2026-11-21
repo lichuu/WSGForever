@@ -1,8 +1,9 @@
 # WSGForever
 
 ## Unreleased
-- Enemy frame styles: nine looks to choose from in a dropdown on the settings tab (Flat, Classic, Raid frames, Dark, Compact, Dark compact, Slim, Large, and Minimal with no class icons), or with `/fc style <name>`.
-- Bar texture: a second dropdown picks the bar texture separately, including any that your other addons share.
+- Enemy frame styles: ten looks to choose from in a dropdown on the settings tab (Flat, Classic, Raid frames, Dark, Compact, Dark compact, Slim, Large, Minimal with no class icons, and ElvUI), or with `/fc style <name>`.
+- Bar texture and font: two more dropdowns pick these separately, including any that your other addons share. The font also applies to the team name and count above the list.
+- An ElvUI style: tight rows with outlined text, using ElvUI's own bar texture and font when ElvUI is running.
 
 ## 0.6.1
 - Fixed pinging or focusing an enemy who is too far away to target: it used to ping or focus whoever you already had targeted. Now it does nothing.

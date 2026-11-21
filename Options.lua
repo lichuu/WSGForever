@@ -260,6 +260,17 @@ local function BuildPage(parent, x, y)
         function() return GK.db.enemyTexture or "" end,
         function(name) GK.SetEnemyTexture(name ~= "" and name or nil) end)
     page.textureDrop:SetPoint("TOPLEFT", x + COL_W + 20 + 84, y)
+    y = y - 32
+    Label("Font", x)
+    page.fontDrop = MakeDropdown(parent, COL_W - 84, GK.EnemyFonts,
+        function() return GK.db.enemyFont or "" end,
+        function(name) GK.SetEnemyFont(name ~= "" and name or nil) end)
+    page.fontDrop:SetPoint("TOPLEFT", x + 84, y)
+    local note = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    note:SetPoint("TOPLEFT", x + COL_W + 20, y - 1)
+    note:SetWidth(COL_W)
+    note:SetJustifyH("LEFT")
+    note:SetText("Textures and fonts from your other addons (ElvUI and similar) are listed here.")
     y = y - 42
     MakeHeader(parent, "Layout", x, y, width)
     y = y - 30
@@ -293,6 +304,7 @@ function Options:Sync()
         for _, c in ipairs(page.checks) do c.mark:SetShown(GK.db[c.key] and true or false) end
         page.styleDrop:Sync()
         page.textureDrop:Sync()
+        page.fontDrop:Sync()
         page.move:SetText(GK.db.locked and "Move and resize frames" or "Lock frames")
         page.test:SetText(GK.testMode and "End preview" or "Preview")
     end

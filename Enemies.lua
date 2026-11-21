@@ -26,12 +26,15 @@ local STYLES = {
     slim = { rowH = 14, barW = 150, gap = 1, powerH = 0, font = 10, texture = FLAT },
     large = { rowH = 30, barW = 200, gap = 3, powerH = 4, font = 13, texture = FLAT, shine = true },
     minimal = { rowH = 20, barW = 180, gap = 2, powerH = 0, font = 11, texture = FLAT, noIcon = true },
+    -- Tight rows and outlined text in the manner of ElvUI. When ElvUI is
+    -- running, its own bar texture and font are used.
+    elvui = { rowH = 22, barW = 164, gap = 1, powerH = 3, font = 11, texture = FLAT, outline = true, elv = true },
 }
 -- In the order the settings page lists them: { name, label }.
 GK.enemyStyles = {
     { "flat", "Flat" }, { "classic", "Classic" }, { "raid", "Raid frames" }, { "dark", "Dark" },
     { "compact", "Compact" }, { "darkcompact", "Dark compact" }, { "slim", "Slim" }, { "large", "Large" },
-    { "minimal", "Minimal, no class icons" },
+    { "minimal", "Minimal, no class icons" }, { "elvui", "ElvUI" },
 }
 
 local style
@@ -53,6 +56,37 @@ local function SharedMedia()
     return stub and stub("LibSharedMedia-3.0", true)
 end
 
+-- ElvUI's current media (bar texture, font), when ElvUI is running.
+local function ElvMedia()
+    local e = _G.ElvUI
+    e = type(e) == "table" and e[1]
+    local media = type(e) == "table" and e.media
+    return type(media) == "table" and media or nil
+end
+
+-- The font for names, health and the header: the player's pick, else the
+-- style's. Second result is the outline flag.
+local function TextFont()
+    local flags = style.outline and "OUTLINE" or ""
+    local name = GK.db and GK.db.enemyFont
+    local media = name and SharedMedia()
+    local path = media and media:Fetch("font", name, true)
+    if path then return path, flags end
+    local elv = style.elv and ElvMedia()
+    if elv and type(elv.normFont) == "string" then return elv.normFont, flags end
+    return FONT, flags
+end
+
+-- Names for the settings page: "" is the style's own font.
+function GK.EnemyFonts()
+    local list = { { "", "Style default" } }
+    local media = SharedMedia()
+    if media then
+        for _, name in ipairs(media:List("font")) do list[#list + 1] = { name, name } end
+    end
+    return list
+end
+
 -- The texture to draw bars with, and whether the player picked it.
 local function BarTexture()
     local name = GK.db and GK.db.enemyTexture
@@ -64,6 +98,8 @@ local function BarTexture()
         local path = media and media:Fetch("statusbar", name, true)
         if path then return path, true end
     end
+    local elv = style.elv and ElvMedia()
+    if elv and type(elv.normTex) == "string" then return elv.normTex, false end
     return style.texture, false
 end
 
@@ -152,8 +188,10 @@ local function LayoutRow(b, i)
     b.power:SetShown(POWER_H > 0)
     b.shine:SetHeight((ROW_H - POWER_H - 1) / 2)
     b.shine:SetShown(style.shine and not custom and true or false)
-    b.name:SetFont(FONT, style.font, "")
-    b.hp:SetFont(FONT, style.font, "")
+    local font, flags = TextFont()
+    b.name:SetFont(font, style.font, flags)
+    b.hp:SetFont(font, style.font, flags)
+    b.targets:SetFont(font, style.font + 1, "OUTLINE")
     b.skull:SetSize(math.min(14, ROW_H - 6), math.min(14, ROW_H - 6))
     -- The carrier's flag sits on the class icon, or beside the row without one.
     b.flag:SetSize(ROW_H - 2, ROW_H - 2)
@@ -642,6 +680,8 @@ function Enemies:Init()
     f:SetFrameStrata("LOW")
     f:SetFrameLevel(100)
     for i = 1, MAX_ROWS do rows[i] = MakeRow(f, i) end
+    self.frame = f
+    self:ApplyStyle() -- header fonts, and anything a saved texture or font changes
     -- Default spot roughly where your BattleGroundEnemies frame was.
     GK.MakeMovable(f, "Enemies", { "TOPRIGHT", "TOPRIGHT", -150, -250 })
     self.frame = f
@@ -706,17 +746,40 @@ function Enemies:ApplyStyle()
     self.frame:SetSize(ROW_W, HEADER_H + MAX_ROWS * (ROW_H + GAP))
     for i, row in ipairs(rows) do
         LayoutRow(row, i)
-        if row.enemy and row.classColor then
-            SetDeadLook(row, row.isDead and true or false)
-            SetFittedName(row.name, GK.ShortName(row.enemy.name))
+        if row.enemy and row.classColor then SetDeadLook(row, row.isDead and true or false) end
+    end
+    -- A font the game hasn't used before loads a moment later. Until then
+    -- the change doesn't take and text set in it stays blank, so set the
+    -- fonts and write the names again once it has loaded.
+    local function Fonts()
+        local path, flags = TextFont()
+        self.frame.title:SetFont(path, style.font + 1, "OUTLINE")
+        self.frame.count:SetFont(path, style.font + 1, "OUTLINE")
+        for _, row in ipairs(rows) do
+            row.name:SetFont(path, style.font, flags)
+            row.hp:SetFont(path, style.font, flags)
+            row.targets:SetFont(path, style.font + 1, "OUTLINE")
+            if row.enemy then
+                row.name:SetText("")
+                SetFittedName(row.name, GK.ShortName(row.enemy.name))
+            end
         end
     end
+    Fonts()
+    C_Timer.After(0.3, Fonts)
+    C_Timer.After(1.5, Fonts)
     return true
 end
 
 -- name: one from GK.EnemyTextures(), or nil for the style's own texture.
 function GK.SetEnemyTexture(name)
     GK.db.enemyTexture = name
+    if Enemies:ApplyStyle() == false then GK.Print("The enemy frames change when combat ends.") end
+end
+
+-- name: one from GK.EnemyFonts(), or nil for the style's own font.
+function GK.SetEnemyFont(name)
+    GK.db.enemyFont = name
     if Enemies:ApplyStyle() == false then GK.Print("The enemy frames change when combat ends.") end
 end
 

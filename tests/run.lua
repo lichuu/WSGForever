@@ -324,6 +324,25 @@ scenario("the style dropdown lists every style, and picking a style or texture a
     check(GK.db.enemyTexture == "Blizzard", "texture not saved")
     page.textureDrop:Pick("")
     check(GK.db.enemyTexture == nil, "Style default should clear the texture choice")
+    -- media shared by other addons shows in the lists; ElvUI's own media drives the ElvUI style
+    LibStub = function() return {
+        List = function(_, kind) return kind == "font" and { "Expressway", "PT Sans Narrow" } or { "ElvUI Norm" } end,
+        Fetch = function(_, kind, name) return "Interface\\AddOns\\Shared\\" .. kind .. "\\" .. name end,
+    } end
+    page.fontDrop:Open()
+    check(sim.showing("^Expressway$") ~= nil, "shared fonts missing from the font list")
+    page.fontDrop:Pick("Expressway")
+    check(GK.db.enemyFont == "Expressway", "font not saved")
+    page.textureDrop:Open()
+    check(sim.showing("^ElvUI Norm$") ~= nil, "shared textures missing from the texture list")
+    page.textureDrop:Pick("")
+    page.fontDrop:Pick("")
+    check(GK.db.enemyFont == nil, "Style default should clear the font choice")
+    ElvUI = { { media = { normTex = "Interface\\AddOns\\ElvUI\\Norm", normFont = "Interface\\AddOns\\ElvUI\\Font.ttf" } } }
+    slash("style elvui")
+    check(GK.db.enemyStyle == "elvui" and WSGForeverEnemy1:GetHeight() == 22, "ElvUI style not applied")
+    ElvUI, LibStub = nil, nil
+    slash("style elvui") -- still fine without ElvUI installed
     slash("style flat")
     slash("options")
 end)
