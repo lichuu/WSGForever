@@ -24,8 +24,8 @@ local CAPTIONS = {
         "One click tells your team where the enemy flag carrier is." } },
     ["ab-callouts"] = { { "WSGForeverABCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Arathi Basin callouts",
         "Incoming, big incoming, safe and help for every node, each with its own icon." } },
-    ["queue-timers"] = { { "WSGForeverQueue", "RIGHT", "LEFT", -16, 0, "Queue timers",
-        "Time in queue against the estimate, and a countdown to enter when it pops." } },
+    ["queue-timers"] = { { "WSGForeverQueue", "RIGHT", "LEFT", -16, 0, "Queue pop",
+        "How long is left to enter when a battleground queue pops." } },
 }
 
 WSGFShot = {}

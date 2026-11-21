@@ -1,7 +1,7 @@
 # WSGForever
 
 ## Unreleased
-- Queue timers: while you queue for a battleground, how long you have waited, the game's estimate, and a bar that turns from green to red as you pass it; one row per queue. When it pops, a countdown of how long is left to enter. An optional ding on the pop (off by default) is heard even with sound effects muted.
+- Queue pop countdown: when a battleground queue pops, a line showing how long is left to enter, red for the last five seconds. Nothing shows while you are only queued. An optional ding on the pop (off by default) is heard even with sound effects muted.
 - The match timer also starts when your Preparation buff comes off, as one more way of knowing the gates have opened.
 
 ## 0.8.1

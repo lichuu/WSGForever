@@ -262,25 +262,20 @@ scenario("the history tab opens, shows the totals, and switches with the setting
     sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
 end)
 
-scenario("queue timers: time waited and estimate while queued, countdown when it pops", function()
+scenario("queue pop: nothing while queued, a countdown when it pops, sound only if turned on", function()
     sim.instanceType, sim.zone = "none", "Orgrimmar"
     sim.fire("PLAYER_ENTERING_WORLD")
     sim.sounds = {}
-    sim.queue[1] = { "queued", "Warsong Gulch", nil, 192000, 150000 }
-    sim.queue[2] = { "queued", "Arathi Basin", nil, 40000, 0 } -- no estimate yet
+    sim.queue[1] = { "queued", "Warsong Gulch" }
     sim.run(0.5)
-    check(WSGForeverQueue:IsShown(), "queue timers should show while queued")
-    check(sim.showing("^3:12 |cff9a9a9a/ 2:30|r$") ~= nil, "time waited and estimate wrong")
-    check(sim.showing("^0:40$") ~= nil, "a queue without an estimate should show just the time waited")
-    check(#sim.sounds == 0, "nothing should sound while queued")
-    -- it pops: a countdown, and no sound unless it is turned on
+    check(not WSGForeverQueue:IsShown() and #sim.sounds == 0, "nothing should show or sound while just queued")
     sim.queue[1] = { "confirm", "Warsong Gulch", 85 }
     sim.run(0.5)
-    check(sim.showing("is ready$") ~= nil and sim.showing("^|cff4fff4f1:25|r$") ~= nil, "countdown to enter wrong")
+    check(WSGForeverQueue:IsShown() and sim.showing("is ready: |cff4fff4f1:25|r$") ~= nil, "countdown to enter wrong")
     check(#sim.sounds == 0, "the pop sound is off by default")
-    sim.queue[1], sim.queue[2] = nil, nil
+    sim.queue[1] = nil
     sim.run(0.5)
-    check(not WSGForeverQueue:IsShown(), "queue timers should clear when no queue is left")
+    check(not WSGForeverQueue:IsShown(), "countdown should clear")
     -- with the sound on: one ding on the pop, three more at five seconds, once
     GK.db.queueSound = true
     sim.queue[1] = { "confirm", "Warsong Gulch", 85 }
@@ -289,7 +284,7 @@ scenario("queue timers: time waited and estimate while queued, countdown when it
     check(#sim.sounds == 1 and sim.sounds[1].channel == "Master", "expected one ding on the master channel, got " .. #sim.sounds)
     sim.queue[1][3] = 4.2
     sim.run(2)
-    check(#sim.sounds == 4 and sim.showing("^|cffff4f4f0:04|r$") ~= nil, "expected three warning dings and a red countdown, got " .. #sim.sounds)
+    check(#sim.sounds == 4 and sim.showing("|cffff4f4f0:05|r$") ~= nil, "expected three warning dings and a red countdown, got " .. #sim.sounds)
     sim.run(2)
     check(#sim.sounds == 4, "the warning should play only once")
     GK.db.queueSound = false
