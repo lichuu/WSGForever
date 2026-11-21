@@ -294,6 +294,19 @@ scenario("the match timer counts from the gates opening", function()
     check(sim.showing("^0:40$") ~= nil, "timer should start when the game's countdown ends, got " .. tostring(sim.showing("^%d+:%d%d$")))
     newMatch()
     sim.runTimeMs = 420000
+    -- the Preparation buff coming off is a start signal too
+    newMatch()
+    sim.runTimeMs = 120000 -- the same two-minute wait as measured above
+    C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return sim.preparing and id == 44521 and { spellId = id } or nil end }
+    sim.preparing = true
+    sim.run(5)
+    check(sim.showing("^0:00$") ~= nil, "timer should read 0:00 while Preparation is up")
+    sim.preparing = false
+    sim.run(20.5)
+    check(sim.showing("^0:20$") ~= nil, "timer should start when Preparation comes off, got " .. tostring(sim.showing("^%d+:%d%d$")))
+    C_UnitAuras = nil
+    newMatch()
+    sim.runTimeMs = 420000
     -- where the game reports the match's own duration, that wins: zero while waiting, exact on a late join
     C_PvP.GetActiveMatchState = function() return sim.matchState end
     C_PvP.GetActiveMatchDuration = function() return sim.matchSeconds end

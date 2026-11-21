@@ -62,6 +62,19 @@ local function ServerDuration()
     if type(seconds) == "number" and seconds >= 0 and seconds < 86400 then return seconds end
 end
 
+-- The Preparation buff is on you while you wait behind the gates and is
+-- taken off the moment they open, which makes it one more start signal.
+local PREPARATION = 44521
+local hadPreparation = false
+local function WatchPreparation()
+    local get = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
+    if not get or not GK.InBattleground() then hadPreparation = false return end
+    local ok, aura = pcall(get, PREPARATION)
+    local has = ok and aura ~= nil
+    if hadPreparation and not has then GatesOpened() end
+    hadPreparation = has
+end
+
 -- Seconds since the gates opened.
 local function Elapsed()
     local server = ServerDuration()
@@ -142,6 +155,7 @@ function Timer:Init()
         tick = tick + dt
         if tick < 0.25 then return end
         tick = 0
+        WatchPreparation()
         local seconds = GK.InBattleground() and Elapsed()
         -- A sample outside a battleground, so it can be placed.
         frame.text:SetText(seconds and Text(seconds) or "12:34")

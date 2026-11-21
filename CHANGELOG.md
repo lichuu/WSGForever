@@ -1,5 +1,8 @@
 # WSGForever
 
+## Unreleased
+- The match timer also starts when your Preparation buff comes off, as one more way of knowing the gates have opened.
+
 ## 0.8.1
 - The match timer now starts when the gates open, not when the battleground is created. It keeps its time through a reload, and works out the start when you join a match already under way.
 
