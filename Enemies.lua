@@ -11,27 +11,74 @@ local FONT = "Fonts\\FRIZQT__.TTF"
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local BLIZZARD_BAR = "Interface\\TargetingFrame\\UI-StatusBar"
 
+local RAID_BAR = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill"
+
 -- Styles: the sizes, bar texture and colouring of the rows. "dark" draws
--- grey bars with the name in the class colour and missing health in red.
+-- grey bars with the name in the class colour;
+-- powerH 0 leaves out the mana bar; noIcon leaves out the class icon.
 local STYLES = {
     flat = { rowH = 24, barW = 164, gap = 3, powerH = 3, font = 11, texture = FLAT, shine = true },
     classic = { rowH = 22, barW = 164, gap = 2, powerH = 4, font = 11, texture = BLIZZARD_BAR },
-    compact = { rowH = 17, barW = 124, gap = 1, powerH = 2, font = 10, texture = FLAT },
+    raid = { rowH = 24, barW = 164, gap = 2, powerH = 3, font = 11, texture = RAID_BAR },
     dark = { rowH = 24, barW = 164, gap = 3, powerH = 3, font = 11, texture = FLAT, dark = true },
+    compact = { rowH = 17, barW = 124, gap = 1, powerH = 2, font = 10, texture = FLAT },
+    darkcompact = { rowH = 17, barW = 124, gap = 1, powerH = 2, font = 10, texture = FLAT, dark = true },
+    slim = { rowH = 14, barW = 150, gap = 1, powerH = 0, font = 10, texture = FLAT },
+    large = { rowH = 30, barW = 200, gap = 3, powerH = 4, font = 13, texture = FLAT, shine = true },
+    minimal = { rowH = 20, barW = 180, gap = 2, powerH = 0, font = 11, texture = FLAT, noIcon = true },
 }
 -- In the order the settings page lists them: { name, label }.
-GK.enemyStyles = { { "flat", "Flat" }, { "classic", "Classic" }, { "compact", "Compact" }, { "dark", "Dark" } }
+GK.enemyStyles = {
+    { "flat", "Flat" }, { "classic", "Classic" }, { "raid", "Raid frames" }, { "dark", "Dark" },
+    { "compact", "Compact" }, { "darkcompact", "Dark compact" }, { "slim", "Slim" }, { "large", "Large" },
+    { "minimal", "Minimal, no class icons" },
+}
 
 local style
 local ROW_H, GAP, ICON_W, BAR_W, ROW_W, POWER_H, NAME_W
 local function UseStyle(name)
     style = STYLES[name] or STYLES.flat
     ROW_H, GAP, BAR_W, POWER_H = style.rowH, style.gap, style.barW, style.powerH
-    ICON_W = ROW_H
-    ROW_W = ICON_W + 1 + BAR_W
+    ICON_W = style.noIcon and 0 or ROW_H
+    ROW_W = ICON_W + (ICON_W > 0 and 1 or 0) + BAR_W
     NAME_W = BAR_W - 5 - 50 -- bar minus left pad and HP area
 end
 UseStyle("flat")
+
+-- The bar texture can be chosen separately from the style: one of ours, or
+-- any status bar texture another addon has shared (LibSharedMedia).
+local BUILTIN_TEXTURES = { { "Flat", FLAT }, { "Blizzard", BLIZZARD_BAR }, { "Raid frames", RAID_BAR } }
+local function SharedMedia()
+    local stub = _G.LibStub
+    return stub and stub("LibSharedMedia-3.0", true)
+end
+
+-- The texture to draw bars with, and whether the player picked it.
+local function BarTexture()
+    local name = GK.db and GK.db.enemyTexture
+    if name then
+        for _, t in ipairs(BUILTIN_TEXTURES) do
+            if t[1] == name then return t[2], true end
+        end
+        local media = SharedMedia()
+        local path = media and media:Fetch("statusbar", name, true)
+        if path then return path, true end
+    end
+    return style.texture, false
+end
+
+-- Names for the settings page: "" is the style's own texture.
+function GK.EnemyTextures()
+    local list, have = { { "", "Style default" } }, {}
+    for _, t in ipairs(BUILTIN_TEXTURES) do list[#list + 1] = { t[1], t[1] } have[t[1]] = true end
+    local media = SharedMedia()
+    if media then
+        for _, name in ipairs(media:List("statusbar")) do
+            if not have[name] then list[#list + 1] = { name, name } end
+        end
+    end
+    return list
+end
 local CLASS_ICONS = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
 local SKULL = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
 local FACTION_COLOR = { [0] = { 0.86, 0.22, 0.20 }, [1] = { 0.27, 0.56, 0.90 } } -- Horde, Alliance
@@ -89,19 +136,33 @@ local function LayoutRow(b, i)
     b:SetSize(ROW_W, ROW_H)
     b:ClearAllPoints()
     b:SetPoint("TOPLEFT", 0, -HEADER_H - (i - 1) * (ROW_H + GAP))
-    b.icon:SetSize(ICON_W, ROW_H)
+    local texture, custom = BarTexture()
+    b.icon:SetSize(math.max(ICON_W, 1), ROW_H)
+    b.icon:SetShown(ICON_W > 0)
     b.bar:ClearAllPoints()
-    b.bar:SetPoint("TOPLEFT", b.icon, "TOPRIGHT", 1, 0)
-    b.bar:SetPoint("BOTTOMRIGHT", 0, POWER_H + 1)
-    b.bar:SetStatusBarTexture(style.texture)
-    b.missing:SetTexture(style.texture)
-    b.power:SetStatusBarTexture(style.texture)
+    if ICON_W > 0 then
+        b.bar:SetPoint("TOPLEFT", b.icon, "TOPRIGHT", 1, 0)
+    else
+        b.bar:SetPoint("TOPLEFT")
+    end
+    b.bar:SetPoint("BOTTOMRIGHT", 0, POWER_H > 0 and POWER_H + 1 or 0)
+    b.bar:SetStatusBarTexture(texture)
+    b.missing:SetTexture(texture)
+    b.power:SetStatusBarTexture(texture)
+    b.power:SetShown(POWER_H > 0)
     b.shine:SetHeight((ROW_H - POWER_H - 1) / 2)
-    b.shine:SetShown(style.shine and true or false)
+    b.shine:SetShown(style.shine and not custom and true or false)
     b.name:SetFont(FONT, style.font, "")
     b.hp:SetFont(FONT, style.font, "")
     b.skull:SetSize(math.min(14, ROW_H - 6), math.min(14, ROW_H - 6))
+    -- The carrier's flag sits on the class icon, or beside the row without one.
     b.flag:SetSize(ROW_H - 2, ROW_H - 2)
+    b.flag:ClearAllPoints()
+    if ICON_W > 0 then
+        b.flag:SetPoint("CENTER", b.icon, "CENTER")
+    else
+        b.flag:SetPoint("LEFT", b, "RIGHT", 3, 0)
+    end
 end
 
 local function MakeRow(parent, i)
@@ -241,8 +302,10 @@ end
 local function PaintAlive(row)
     local r, g, b = unpack(row.classColor)
     if style.dark then
-        row.bar:SetStatusBarColor(0.17, 0.17, 0.19)
-        row.missing:SetVertexColor(0.5, 0.1, 0.1, 1)
+        -- Missing health is near black, not a colour: the bar fades when the
+        -- enemy is out of range, and a colour behind it would show through.
+        row.bar:SetStatusBarColor(0.26, 0.26, 0.29)
+        row.missing:SetVertexColor(0.04, 0.04, 0.05, 1)
         row.name:SetTextColor(r, g, b)
     else
         row.bar:SetStatusBarColor(r, g, b)
@@ -649,6 +712,12 @@ function Enemies:ApplyStyle()
         end
     end
     return true
+end
+
+-- name: one from GK.EnemyTextures(), or nil for the style's own texture.
+function GK.SetEnemyTexture(name)
+    GK.db.enemyTexture = name
+    if Enemies:ApplyStyle() == false then GK.Print("The enemy frames change when combat ends.") end
 end
 
 function GK.SetEnemyStyle(name)

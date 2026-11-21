@@ -25,7 +25,7 @@ local defaults = {
     enemyScale = 1,
     battleMap = true, -- class-coloured, larger teammate dots on the battlefield map
     history = true, -- keep a record of finished battlegrounds
-    enemyStyle = "flat", -- look of the enemy frames: flat, classic, compact or dark
+    enemyStyle = "flat", -- look of the enemy frames, one of GK.enemyStyles
     minimapButton = true,
     minimapAngle = 205, -- degrees around the minimap
 }
@@ -462,7 +462,7 @@ local function Help()
     print("  /fc test           - preview everything outside a battleground")
     print("  /fc reset          - reset frame positions and sizes")
     print("  /fc scale          - list sizes; /fc scale <name> <percent> sets one")
-    print("  /fc style <name>   - enemy frame style: flat, classic, compact or dark")
+    print("  /fc style <name>   - enemy frame style; /fc style lists them")
     print("  /fc minimap        - show or hide the minimap button")
     print("  /fc sync           - share your rez timer with your group")
     print("  /fc debug          - what the carrier tracking can see, for bug reports")

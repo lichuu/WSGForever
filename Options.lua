@@ -46,6 +46,7 @@ local SECTIONS = {
 
 local window, minimap
 local pages = {} -- every copy of the page: the window's and the game options'
+Options.pages = pages
 
 -- The page ---------------------------------------------------------------------
 
@@ -94,6 +95,117 @@ local function MakeCheck(page, parent, key, name, desc, full)
     return b
 end
 
+-- A dropdown: a box showing the current choice, and a list that opens under
+-- it. items() returns { { value, label }, ... }; long lists scroll.
+local function MakeDropdown(parent, width, items, current, pick)
+    local VISIBLE, H = 10, 20
+    local d = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    d:SetSize(width, 24)
+    d:SetBackdrop({ bgFile = FLAT, edgeFile = FLAT, edgeSize = 1 })
+    d:SetBackdropColor(0.04, 0.04, 0.05, 1)
+    d:SetBackdropBorderColor(0.42, 0.42, 0.46, 1)
+    d.text = d:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    d.text:SetPoint("LEFT", 8, 0)
+    d.text:SetPoint("RIGHT", -22, 0)
+    d.text:SetJustifyH("LEFT")
+    d.text:SetWordWrap(false)
+    local arrow = d:CreateTexture(nil, "OVERLAY")
+    arrow:SetTexture("Interface\\Buttons\\Arrow-Down-Up")
+    arrow:SetSize(14, 14)
+    arrow:SetPoint("RIGHT", -5, -3)
+    local hover = d:CreateTexture(nil, "HIGHLIGHT")
+    hover:SetAllPoints()
+    hover:SetColorTexture(1, 1, 1, 0.06)
+
+    -- A screen-sized catcher behind the list: a click anywhere else closes it.
+    local catcher = CreateFrame("Button", nil, UIParent)
+    catcher:SetAllPoints(UIParent)
+    catcher:SetFrameStrata("FULLSCREEN_DIALOG")
+    catcher:Hide()
+    local list = CreateFrame("Frame", nil, catcher, "BackdropTemplate")
+    list:SetFrameLevel(catcher:GetFrameLevel() + 5)
+    list:SetPoint("TOPLEFT", d, "BOTTOMLEFT", 0, -2)
+    list:SetWidth(width)
+    list:SetBackdrop({ bgFile = FLAT, edgeFile = FLAT, edgeSize = 1 })
+    list:SetBackdropColor(0.07, 0.07, 0.08, 1)
+    list:SetBackdropBorderColor(0.42, 0.42, 0.46, 1)
+    list:EnableMouse(true)
+    list.more = list:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    list.more:SetPoint("BOTTOM", 0, 4)
+    list.more:SetText("Scroll for more")
+    list.rows = {}
+    local offset = 0
+
+    local function Fill()
+        local all = items()
+        local shown = math.min(VISIBLE, #all)
+        local scrolls = #all > VISIBLE
+        offset = math.max(0, math.min(#all - shown, offset))
+        list:SetHeight(shown * H + 2 + (scrolls and 16 or 0))
+        list.more:SetShown(scrolls)
+        local now = current()
+        for i, row in ipairs(list.rows) do
+            local item = all[offset + i]
+            if item then
+                row.value = item[1]
+                row.text:SetText(item[2])
+                if item[1] == now then row.text:SetTextColor(1, 0.82, 0) else row.text:SetTextColor(1, 1, 1) end
+            end
+            row:SetShown(item ~= nil)
+        end
+    end
+
+    function d:Pick(value)
+        catcher:Hide()
+        pick(value)
+        Options:Sync()
+    end
+    for i = 1, VISIBLE do
+        local row = CreateFrame("Button", nil, list)
+        row:SetSize(width - 2, H)
+        row:SetPoint("TOPLEFT", 1, -1 - (i - 1) * H)
+        row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        row.text:SetPoint("LEFT", 8, 0)
+        row.text:SetPoint("RIGHT", -8, 0)
+        row.text:SetJustifyH("LEFT")
+        row.text:SetWordWrap(false)
+        local hot = row:CreateTexture(nil, "HIGHLIGHT")
+        hot:SetAllPoints()
+        hot:SetColorTexture(1, 0.82, 0, 0.15)
+        row:SetScript("OnClick", function(self) d:Pick(self.value) end)
+        list.rows[i] = row
+    end
+    list:EnableMouseWheel(true)
+    list:SetScript("OnMouseWheel", function(_, delta)
+        offset = offset - delta * 3
+        Fill()
+    end)
+
+    function d:Open()
+        if not self:IsVisible() then return end
+        -- Start with the current choice in view.
+        local now = current()
+        offset = 0
+        for i, item in ipairs(items()) do
+            if item[1] == now then offset = i - 1 - math.floor(VISIBLE / 2) end
+        end
+        catcher:Show()
+        Fill()
+    end
+    function d:Sync()
+        local now, label = current(), nil
+        for _, item in ipairs(items()) do
+            if item[1] == now then label = item[2] end
+        end
+        -- A texture from an addon that is no longer installed keeps its name.
+        self.text:SetText(label or (tostring(now) .. " (missing)"))
+    end
+    catcher:SetScript("OnClick", function() catcher:Hide() end)
+    d:SetScript("OnClick", function() if catcher:IsShown() then catcher:Hide() else d:Open() end end)
+    d:HookScript("OnHide", function() catcher:Hide() end)
+    return d
+end
+
 local function MakeHeader(parent, text, x, y, width)
     local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     fs:SetPoint("TOPLEFT", x, y)
@@ -132,17 +244,23 @@ local function BuildPage(parent, x, y)
 
     y = lowest - 10
     local width = COL_W * 2 + 20
-    MakeHeader(parent, "Enemy frame style", x, y, width)
-    y = y - 30
-    page.styles = {}
-    local quarter = (width - 24) / 4
-    for n, s in ipairs(GK.enemyStyles) do
-        local b = MakeButton(parent, quarter, function() GK.SetEnemyStyle(s[1]) end)
-        b:SetText(s[2])
-        b:SetPoint("TOPLEFT", x + (n - 1) * (quarter + 8), y)
-        page.styles[s[1]] = b
+    MakeHeader(parent, "Enemy frames look", x, y, width)
+    y = y - 28
+    local function Label(text, cx)
+        local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        fs:SetPoint("TOPLEFT", cx, y - 6)
+        fs:SetText(text)
     end
-    y = y - 40
+    Label("Style", x)
+    page.styleDrop = MakeDropdown(parent, COL_W - 84, function() return GK.enemyStyles end,
+        function() return GK.db.enemyStyle end, GK.SetEnemyStyle)
+    page.styleDrop:SetPoint("TOPLEFT", x + 84, y)
+    Label("Bar texture", x + COL_W + 20)
+    page.textureDrop = MakeDropdown(parent, COL_W - 84, GK.EnemyTextures,
+        function() return GK.db.enemyTexture or "" end,
+        function(name) GK.SetEnemyTexture(name ~= "" and name or nil) end)
+    page.textureDrop:SetPoint("TOPLEFT", x + COL_W + 20 + 84, y)
+    y = y - 42
     MakeHeader(parent, "Layout", x, y, width)
     y = y - 30
     local third = (width - 16) / 3
@@ -173,14 +291,8 @@ function Options:Sync()
     if minimap then minimap:SetShown(GK.db.minimapButton) end
     for _, page in ipairs(pages) do
         for _, c in ipairs(page.checks) do c.mark:SetShown(GK.db[c.key] and true or false) end
-        for name, b in pairs(page.styles) do
-            -- The chosen style stays lit, with white text.
-            if GK.db.enemyStyle == name then
-                b:LockHighlight() b:SetNormalFontObject("GameFontHighlight")
-            else
-                b:UnlockHighlight() b:SetNormalFontObject("GameFontNormal")
-            end
-        end
+        page.styleDrop:Sync()
+        page.textureDrop:Sync()
         page.move:SetText(GK.db.locked and "Move and resize frames" or "Lock frames")
         page.test:SetText(GK.testMode and "End preview" or "Preview")
     end

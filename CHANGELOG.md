@@ -1,7 +1,8 @@
 # WSGForever
 
 ## Unreleased
-- Enemy frame styles: choose Flat, Classic, Compact or Dark on the settings tab, or with `/fc style <name>`.
+- Enemy frame styles: nine looks to choose from in a dropdown on the settings tab (Flat, Classic, Raid frames, Dark, Compact, Dark compact, Slim, Large, and Minimal with no class icons), or with `/fc style <name>`.
+- Bar texture: a second dropdown picks the bar texture separately, including any that your other addons share.
 
 ## 0.6.1
 - Fixed pinging or focusing an enemy who is too far away to target: it used to ping or focus whoever you already had targeted. Now it does nothing.

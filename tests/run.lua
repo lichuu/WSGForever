@@ -303,6 +303,31 @@ scenario("enemy frame styles resize the rows, wait for combat to end, and reject
     slash("test")
 end)
 
+scenario("the style dropdown lists every style, and picking a style or texture applies it", function()
+    local slash = SlashCmdList.WSGFOREVER
+    slash("")
+    local page = GK.modules.Options.pages[#GK.modules.Options.pages] -- the window's copy
+    check(sim.showing("^Flat$") ~= nil, "the dropdown does not show the current style")
+    check(sim.showing("^Dark compact$") == nil, "the list is open before it was clicked")
+    page.styleDrop:Open()
+    for _, s in ipairs(GK.enemyStyles) do
+        check(sim.showing("^" .. s[2] .. "$") ~= nil, "style missing from the list: " .. s[2])
+    end
+    page.styleDrop:Pick("large")
+    check(GK.db.enemyStyle == "large" and WSGForeverEnemy1:GetHeight() == 30, "picking Large did not apply it")
+    check(sim.showing("^Large$") ~= nil and sim.showing("^Dark compact$") == nil, "the list stayed open, or the box shows the wrong style")
+    page.styleDrop:Pick("minimal")
+    check(WSGForeverEnemies:GetWidth() == 180, "the no-icon style should be only as wide as its bar")
+    page.textureDrop:Open()
+    check(sim.showing("^Style default$") ~= nil and sim.showing("^Blizzard$") ~= nil, "texture list wrong")
+    page.textureDrop:Pick("Blizzard")
+    check(GK.db.enemyTexture == "Blizzard", "texture not saved")
+    page.textureDrop:Pick("")
+    check(GK.db.enemyTexture == nil, "Style default should clear the texture choice")
+    slash("style flat")
+    slash("options")
+end)
+
 -- Key bindings and the group version check ------------------------------------------
 
 scenario("every key binding presses a button that exists and has a name in the menu", function()
