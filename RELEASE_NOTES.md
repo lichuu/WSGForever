@@ -1,4 +1,4 @@
-- Enemy frame styles: eleven looks to choose from in a dropdown on the settings tab (Flat, Classic, Raid frames, Dark, Compact, Dark compact, Slim, Large, Minimal with no class icons, ElvUI and EllesmereUI), or with `/fc style <name>`.
-- Bar texture and font: two more dropdowns pick these separately, including any that your other addons share. The font also applies to the team name and count above the list.
-- Enemy names can be turned off on the settings tab, for bars and class icons only.
-- ElvUI and EllesmereUI styles. When that UI is running, the enemy frames follow its settings: ElvUI's unit frame bar texture, font, size, outline and health colour; EllesmereUI's font, outline and class colours. Without it, they use a look in its manner.
+- Match timer: a small clock beside the score showing how long the battleground has been running, in every battleground. Drag it anywhere with `/fc unlock`.
+- Fixed the enemy frames emptying after you clicked the Alliance or Horde tab on the game's scoreboard. That tab also limits what addons can see; the addon now waits for the scoreboard to close and switches it back to All.
+- Arathi Basin callouts: a second callout bar appears in Arathi Basin with Incoming, Big incoming, Safe and Help for each of the five nodes, each with its own icon. Each can be bound to a key, and the bar moves and resizes separately (`/fc scale abcallouts`).
+- Match history: hover a match to see its final scoreboard: both teams in class colours with each player's kills, deaths, honorable kills and honor. Matches imported from Nova Instance Tracker show your own team's names only; click the import button again to add them to matches you already imported.
