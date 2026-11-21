@@ -118,6 +118,35 @@ function GK.ClassColor(classToken)
     return 0.5, 0.5, 0.5
 end
 
+-- The game's scoreboard has All / Alliance / Horde tabs, and the tab chosen
+-- also limits what addons are given: on the Horde tab, the Alliance players
+-- are simply missing. We follow which tab is selected, and put it back on
+-- "All" when the scoreboard is closed, so the player's view is never yanked.
+local scoreFilter, resettingFilter = -1, false
+if hooksecurefunc and SetBattlefieldScoreFaction then
+    hooksecurefunc("SetBattlefieldScoreFaction", function(faction) scoreFilter = faction end)
+end
+
+-- True while the scoreboard only holds one team.
+function GK.ScoresFiltered()
+    return scoreFilter == 0 or scoreFilter == 1
+end
+
+-- Puts the scoreboard back on both teams if it is closed. True if both
+-- teams are available afterwards.
+function GK.ShowAllScores()
+    if not GK.ScoresFiltered() then return true end
+    if resettingFilter then return false end
+    for _, name in ipairs({ "PVPMatchScoreboard", "PVPMatchResults", "WorldStateScoreFrame" }) do
+        local f = _G[name]
+        if f and f.IsShown and f:IsShown() then return false end
+    end
+    resettingFilter = true
+    pcall(SetBattlefieldScoreFaction, -1)
+    resettingFilter = false
+    return not GK.ScoresFiltered()
+end
+
 -- Scoreboard rows: { name, classToken, faction, deaths } (faction: 0 = Horde, 1 = Alliance).
 function GK.ScoreRows()
     local rows = {}

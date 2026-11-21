@@ -129,7 +129,10 @@ function time() return math.floor(sim.time) end
 function wipe(t) for k in pairs(t) do t[k] = nil end return t end
 tinsert = table.insert
 function hooksecurefunc(a, b, c)
-    if type(a) == "table" then
+    if type(a) == "string" then
+        local old = _G[a]
+        _G[a] = function(...) local r = { old(...) } b(...) return unpack(r) end
+    elseif type(a) == "table" then
         local old = a[b]
         a[b] = function(...) local r = { old(...) } c(...) return unpack(r) end
     end
@@ -140,16 +143,27 @@ function GetZoneText() return sim.zone or "Warsong Gulch" end
 -- The scoreboard: sim.scores is a list of rows as the game returns them,
 -- sim.winner is 0 (Horde), 1 (Alliance) or nil while the match is running.
 sim.scores = {}
-function GetNumBattlefieldScores() return #sim.scores end
-C_PvP = { GetScoreInfo = function(i) return sim.scores[i] end }
+-- The scoreboard's team tabs limit what these return: -1 both, 0 Horde, 1 Alliance.
+sim.scoreFilter = -1
+function SetBattlefieldScoreFaction(faction) sim.scoreFilter = faction or -1 end
+local function Scores()
+    if sim.scoreFilter ~= 0 and sim.scoreFilter ~= 1 then return sim.scores end
+    local list = {}
+    for _, r in ipairs(sim.scores) do
+        if r.faction == sim.scoreFilter then list[#list + 1] = r end
+    end
+    return list
+end
+function GetNumBattlefieldScores() return #Scores() end
+C_PvP = { GetScoreInfo = function(i) return Scores()[i] end }
 -- The older scoreboard call, with its positional results.
 function GetBattlefieldScore(i)
-    local r = sim.scores[i]
+    local r = Scores()[i]
     if not r then return nil end
     return r.name, r.killingBlows, r.honorableKills, r.deaths, r.honorGained, r.faction, 0, "Race", "Class", r.classToken, r.damageDone, r.healingDone
 end
 function GetBattlefieldStatData(i, j)
-    local r = sim.scores[i]
+    local r = Scores()[i]
     local st = r and r.stats
     if st == SECRET then return SECRET end
     return type(st) == "table" and st[j] and st[j].pvpStatValue or nil

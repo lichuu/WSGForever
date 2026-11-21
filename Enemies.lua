@@ -623,6 +623,9 @@ end
 
 local function UpdateRoster()
     if waitingForFreshScore and not GK.testMode then return end
+    -- With the scoreboard open on one team's tab the other team is missing
+    -- from what the game gives us: keep the list we have until it is back.
+    if GK.InBattleground() and not GK.ShowAllScores() then return end
     local list = BuildRoster()
     UpdateDeaths(list)
     if not SameRoster(list, roster) then ApplyRoster(list) end

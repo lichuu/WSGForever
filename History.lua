@@ -128,7 +128,11 @@ local function Save(winner, duration)
     local result = Result(winner)
     if not result then return end
     saved = true
+    -- If the scoreboard is open on one team's tab, the other team is missing
+    -- for now: note it, and fill the rest in when both teams are back.
+    local complete = GK.ShowAllScores()
     local record, teams = Scoreboard()
+    record.partial = not complete or nil
     record.at = time()
     record.map = GK.Plain((GetInstanceInfo())) or GK.Plain(GetZoneText()) or "Battleground"
     record.result = result
@@ -425,6 +429,14 @@ function History:Init()
             C_Timer.After(1.5, function() Save(a1, a2) end)
         elseif event == "UPDATE_BATTLEFIELD_SCORE" then
             if GetBattlefieldWinner and Num(GetBattlefieldWinner()) ~= nil then Save() end
+            -- A match saved while one team was hidden: complete it once both show.
+            local last = saved and GK.db.matches[1]
+            if last and last.partial and GK.ShowAllScores() then
+                local mine, teams = Scoreboard()
+                for k, v in pairs(mine) do last[k] = v end
+                last.teams, last.partial = teams, nil
+                History:Update()
+            end
         end
     end))
 end

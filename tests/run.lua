@@ -262,6 +262,36 @@ scenario("the history tab opens, shows the totals, and switches with the setting
     sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
 end)
 
+scenario("the scoreboard's team tabs don't empty the enemy list or cut a team from the history", function()
+    wipe(GK.db.matches)
+    newMatch()
+    sim.scores = { myRow(), { name = "Amy Ally", classToken = "PRIEST", faction = 1, killingBlows = 2 },
+        { name = "Zed Ally", classToken = "WARRIOR", faction = 1, killingBlows = 1 } }
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(WSGForeverEnemy1:IsShown() and WSGForeverEnemy2:IsShown(), "enemy rows missing to begin with")
+    -- the player clicks the Horde tab and closes the scoreboard: we put it back on All
+    SetBattlefieldScoreFaction(0)
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(sim.scoreFilter == -1 and WSGForeverEnemy1:IsShown() and WSGForeverEnemy2:IsShown(), "enemy rows lost after the Horde tab")
+    -- with the scoreboard still open their tab is left alone, and the list is kept as it was
+    PVPMatchScoreboard = CreateFrame("Frame")
+    SetBattlefieldScoreFaction(0)
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(sim.scoreFilter == 0, "changed the player's tab while they were looking at it")
+    check(WSGForeverEnemy1:IsShown() and WSGForeverEnemy2:IsShown(), "enemy rows lost while the scoreboard was open")
+    -- the match ends like that: saved now, and completed when both teams are back
+    sim.winner = 0
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    local m = GK.db.matches[1]
+    check(m and m.partial and m.kills == 4, "match should be saved as incomplete with your own line")
+    PVPMatchScoreboard:Hide()
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(not m.partial and m.teams and #m.teams.theirs == 2 and #m.teams.mine == 1, "match not completed once both teams were back")
+    PVPMatchScoreboard = nil
+    sim.printed = {}
+    sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
+end)
+
 scenario("hovering a match shows its final scoreboard", function()
     wipe(GK.db.matches)
     newMatch()
