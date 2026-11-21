@@ -24,12 +24,19 @@ end
 -- The gates opened: time from now. Saved, so a reload mid-match keeps it.
 -- How far the game's count had got is remembered per battleground, to work
 -- out the start when you join a match that is already running.
-local function GatesOpened()
-    GK.db.matchStart = { at = time(), map = Map() }
+-- inSeconds: how long until they open, when the game announces it ahead.
+local function GatesOpened(inSeconds)
+    inSeconds = inSeconds or 0
+    local at = time() + inSeconds
+    -- The game's countdown and the chat line both report the same opening:
+    -- whichever came first stands.
+    local start = GK.db.matchStart
+    if start and start.map == Map() and math.abs(start.at - at) < 15 then return end
+    GK.db.matchStart = { at = at, map = Map() }
     local count = GameCount()
     if count then
         GK.db.gateWait = GK.db.gateWait or {}
-        GK.db.gateWait[Map()] = count
+        GK.db.gateWait[Map()] = count + inSeconds
     end
 end
 
@@ -79,11 +86,18 @@ function Timer:Init()
     frame:RegisterEvent("PLAYER_ENTERING_WORLD")
     frame:RegisterEvent("UPDATE_UI_WIDGET")
     frame:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
-    frame:SetScript("OnEvent", GK.Safe("Match timer event", function(_, event, msg)
+    pcall(frame.RegisterEvent, frame, "START_TIMER") -- the game's own "battle begins in" countdown
+    frame:SetScript("OnEvent", GK.Safe("Match timer event", function(_, event, msg, seconds)
         if event == "PLAYER_ENTERING_WORLD" then
             enteredAt = GK.InBattleground() and (enteredAt or GetTime()) or nil
             -- Out of the battleground: the next match starts its own clock.
             if not GK.InBattleground() then GK.db.matchStart = nil end
+        elseif event == "START_TIMER" then
+            seconds = GK.Plain(seconds)
+            if type(seconds) == "number" and seconds >= 0 and seconds < 600 and GK.InBattleground() then
+                GatesOpened(seconds)
+            end
+            return
         elseif event == "CHAT_MSG_BG_SYSTEM_NEUTRAL" then
             -- "Let the battle for Warsong Gulch begin!" / "The battle has begun!"
             msg = GK.Plain(msg)

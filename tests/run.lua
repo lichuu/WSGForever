@@ -282,6 +282,18 @@ scenario("the match timer counts from the gates opening", function()
     sim.runTimeMs = 420000
     sim.run(1)
     check(sim.showing("^5:00$") ~= nil, "a late join should take the gate wait off the game's count")
+    -- the game's own countdown also sets the start, ahead of time; the chat line then changes nothing
+    newMatch()
+    sim.runTimeMs = 90000
+    sim.fire("START_TIMER", 1, 30, 120)
+    sim.run(10)
+    check(sim.showing("^0:00$") ~= nil, "timer should wait out the game's countdown")
+    sim.run(20)
+    say("Let the battle for Warsong Gulch begin!")
+    sim.run(40.5)
+    check(sim.showing("^0:40$") ~= nil, "timer should start when the game's countdown ends, got " .. tostring(sim.showing("^%d+:%d%d$")))
+    newMatch()
+    sim.runTimeMs = 420000
     -- a long match shows hours
     sim.runTimeMs = 3845000
     sim.run(1)
