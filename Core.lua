@@ -26,6 +26,8 @@ local defaults = {
     battleMap = true, -- class-coloured, larger teammate dots on the battlefield map
     history = true, -- keep a record of finished battlegrounds
     matchTimer = true, -- a clock for how long the battleground has run
+    queueAlert = true, -- countdown when a battleground queue pops
+    queueSound = true, -- ding on a queue pop, heard with sound effects muted
     enemyNames = true, -- names on the enemy frames
     enemyStyle = "flat", -- look of the enemy frames, one of GK.enemyStyles
     minimapButton = true,
@@ -452,6 +454,8 @@ local toggleList = {
     { "record", "history", "record each finished battleground in the match history" },
     { "names", "enemyNames", "names on the enemy frames" },
     { "timer", "matchTimer", "match timer by the score" },
+    { "queue", "queueAlert", "countdown when a battleground queue pops" },
+    { "queuesound", "queueSound", "ding when a battleground queue pops" },
 }
 local toggles = { raidflag = "raidFlag" } -- old name still works
 for _, t in ipairs(toggleList) do toggles[t[1]] = t[2] end
@@ -461,6 +465,7 @@ local scaleList = {
     { "callouts", "Callouts" },
     { "abcallouts", "AB callouts" },
     { "timer", "Match timer" },
+    { "queue", "Queue pop" },
     { "enemies", "Enemies" },
     { "rez", "RezTimer" },
     { "lowalert", "EFC low alert" },

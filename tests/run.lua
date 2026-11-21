@@ -262,6 +262,39 @@ scenario("the history tab opens, shows the totals, and switches with the setting
     sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
 end)
 
+scenario("a queue pop dings once, counts down, warns at five seconds and clears", function()
+    sim.instanceType, sim.zone = "none", "Orgrimmar"
+    sim.fire("PLAYER_ENTERING_WORLD")
+    sim.sounds = {}
+    sim.queue[1] = { "queued", "Warsong Gulch" }
+    sim.fire("UPDATE_BATTLEFIELD_STATUS")
+    check(#sim.sounds == 0 and not WSGForeverQueuePop:IsShown(), "nothing should happen while just queued")
+    sim.queue[1] = { "confirm", "Warsong Gulch", 85 }
+    sim.fire("UPDATE_BATTLEFIELD_STATUS")
+    sim.fire("UPDATE_BATTLEFIELD_STATUS") -- the game repeats the event: still one ding
+    sim.run(0.5)
+    check(#sim.sounds == 1 and sim.sounds[1].channel == "Master", "expected one ding on the master channel, got " .. #sim.sounds)
+    check(WSGForeverQueuePop:IsShown() and sim.showing("is ready: |cff4fff4f85") ~= nil, "countdown not showing")
+    sim.queue[1][3] = 4.2
+    sim.run(2)
+    check(#sim.sounds == 4 and sim.showing("|cffff4f4f5") ~= nil, "expected three warning dings and a red countdown, got " .. #sim.sounds)
+    sim.run(2)
+    check(#sim.sounds == 4, "the warning should play only once")
+    sim.queue[1] = nil -- entered, or the offer ran out
+    sim.fire("UPDATE_BATTLEFIELD_STATUS")
+    check(not WSGForeverQueuePop:IsShown(), "countdown should clear")
+    GK.db.queueSound = false
+    sim.queue[1] = { "confirm", "Arathi Basin", 85 }
+    sim.fire("UPDATE_BATTLEFIELD_STATUS")
+    check(#sim.sounds == 4 and WSGForeverQueuePop:IsShown(), "with sound off: countdown but no ding")
+    GK.db.queueSound = true
+    sim.queue[1] = nil
+    sim.fire("UPDATE_BATTLEFIELD_STATUS")
+    sim.instanceType, sim.zone = "pvp", nil
+    sim.fire("PLAYER_ENTERING_WORLD")
+    sim.printed = {}
+end)
+
 scenario("the match timer counts from the gates opening", function()
     GK.db.gateWait = nil
     newMatch()

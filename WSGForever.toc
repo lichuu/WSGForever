@@ -12,6 +12,7 @@ Callouts.lua
 Carriers.lua
 RezTimer.lua
 MatchTimer.lua
+Queue.lua
 AutoAssist.lua
 Enemies.lua
 BlizzCarriers.lua

@@ -38,6 +38,7 @@ Every battleground you finish is recorded: win or loss, the flag score, how long
 Every callout can be bound to a key in the game's Key Bindings menu, under WSGForever. So can targeting or pinging the enemy flag carrier and pinging your own.
 
 ### Also
+- A queue pop alert: a ding and a countdown of how long is left to enter.
 - A match timer beside the score, showing how long the battleground has run.
 - A flag icon on your team's carrier in the raid frames.
 - The game's carrier frames moved up beside the score.

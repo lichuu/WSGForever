@@ -189,7 +189,13 @@ function GetAddOnMetadata(_, field) if field == "Version" then return sim.versio
 function UnitIsGroupLeader() return false end
 function GetCVarBool() return false end
 function GetCursorPosition() return 0, 0 end
-function PlaySound() end
+-- Sounds played, and the battleground queue: sim.queue[i] = { status, name, secondsLeft }.
+sim.sounds = {}
+function PlaySound(id, channel) sim.sounds[#sim.sounds + 1] = { id = id, channel = channel } end
+sim.queue = {}
+function GetMaxBattlefieldID() return 3 end
+function GetBattlefieldStatus(i) local q = sim.queue[i] if q then return q[1], q[2] end return "none" end
+function GetBattlefieldPortExpiration(i) local q = sim.queue[i] return q and q[3] or 0 end
 
 local realPrint = print
 function print(...)

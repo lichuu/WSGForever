@@ -1,6 +1,7 @@
 # WSGForever
 
 ## Unreleased
+- Queue pop alert: when a battleground queue pops, a ding (heard even with sound effects muted) and a big countdown of how long is left to enter, with warning dings at five seconds. Both can be turned off on the settings tab.
 - The match timer also starts when your Preparation buff comes off, as one more way of knowing the gates have opened.
 
 ## 0.8.1
