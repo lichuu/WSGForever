@@ -1,4 +1,1 @@
-- Match timer: a small clock beside the score showing how long the battleground has been running, in every battleground. Drag it anywhere with `/fc unlock`.
-- Fixed the enemy frames emptying after you clicked the Alliance or Horde tab on the game's scoreboard. That tab also limits what addons can see; the addon now waits for the scoreboard to close and switches it back to All.
-- Arathi Basin callouts: a second callout bar appears in Arathi Basin with Incoming, Big incoming, Safe and Help for each of the five nodes, each with its own icon. Each can be bound to a key, and the bar moves and resizes separately (`/fc scale abcallouts`).
-- Match history: hover a match to see its final scoreboard: both teams in class colours with each player's kills, deaths, honorable kills and honor. Matches imported from Nova Instance Tracker show your own team's names only; click the import button again to add them to matches you already imported.
+- The match timer now starts when the gates open, not when the battleground is created. It keeps its time through a reload, and works out the start when you join a match already under way.
