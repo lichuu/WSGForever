@@ -65,7 +65,7 @@ Everything is in the settings window; these are the chat commands that remain.
 Work happens on a branch. Pushing it runs the tests; `main` only accepts commits the tests have passed on, so it is always releasable. A release is an annotated tag on `main`:
 
 1. Merge the branch into `main` (fast-forward) and push.
-2. Move the notes under "Unreleased" in `CHANGELOG.md` to a new version heading and push that to `main` the same way.
+2. Move the notes under "Unreleased" in `CHANGELOG.md` to a new version heading, run `lua5.1 tests/release_notes.lua` (it writes that version's notes to `RELEASE_NOTES.md`, which is what the release page shows; the tests fail if it is stale), and push both to `main` the same way.
 3. `git tag -a v1.2.3 -m v1.2.3 && git push origin v1.2.3`
 
 The tag builds the zip, creates the GitHub release and triggers the CurseForge package. A tag that is not on `main` is refused.

@@ -1,0 +1,4 @@
+- Enemy frame styles: eleven looks to choose from in a dropdown on the settings tab (Flat, Classic, Raid frames, Dark, Compact, Dark compact, Slim, Large, Minimal with no class icons, ElvUI and EllesmereUI), or with `/fc style <name>`.
+- Bar texture and font: two more dropdowns pick these separately, including any that your other addons share. The font also applies to the team name and count above the list.
+- Enemy names can be turned off on the settings tab, for bars and class icons only.
+- ElvUI and EllesmereUI styles. When that UI is running, the enemy frames follow its settings: ElvUI's unit frame bar texture, font, size, outline and health colour; EllesmereUI's font, outline and class colours. Without it, they use a look in its manner.

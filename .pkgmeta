@@ -1,10 +1,11 @@
 package-as: WSGForever
 
 manual-changelog:
-  filename: CHANGELOG.md
+  filename: RELEASE_NOTES.md
   markup-type: markdown
 
 ignore:
   - media
   - icon.tga
   - tests
+  - CHANGELOG.md

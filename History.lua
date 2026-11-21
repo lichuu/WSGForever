@@ -21,6 +21,7 @@ local COLUMNS = {
 }
 
 local views = {} -- each place the list is drawn
+History.views = views
 local inMatch, saved, startedAt = false, false, nil
 local offset = 0
 
@@ -31,40 +32,59 @@ end
 
 -- Recording -----------------------------------------------------------------
 
--- Your own line on the scoreboard, as plain numbers where the game allows.
-local function MyScore()
+-- One line of the scoreboard as plain values where the game allows:
+-- name, faction (0 Horde, 1 Alliance), class token, then a table of numbers.
+local function ScoreLine(i)
+    -- GetBattlefieldScore first: it is the call known to return readable
+    -- numbers on Forever. The newer one is the fallback.
+    if GetBattlefieldScore then
+        local name, kills, hk, deaths, honor, faction, _, _, _, classToken, damage, healing = GetBattlefieldScore(i)
+        local row = { kills = Num(kills), hk = Num(hk), deaths = Num(deaths), honor = Num(honor),
+            damage = Num(damage), healing = Num(healing) }
+        -- Battleground-specific columns: in Warsong Gulch, captures then returns.
+        if GetBattlefieldStatData then
+            row.caps, row.returns = Num(GetBattlefieldStatData(i, 1)), Num(GetBattlefieldStatData(i, 2))
+        end
+        return GK.Plain(name), Num(faction), GK.Plain(classToken), row
+    elseif C_PvP and C_PvP.GetScoreInfo then
+        local info = C_PvP.GetScoreInfo(i)
+        if not info then return nil end
+        local row = { kills = Num(info.killingBlows), hk = Num(info.honorableKills), deaths = Num(info.deaths),
+            honor = Num(info.honorGained), damage = Num(info.damageDone), healing = Num(info.healingDone) }
+        if type(info.stats) == "table" then
+            row.caps = info.stats[1] and Num(info.stats[1].pvpStatValue)
+            row.returns = info.stats[2] and Num(info.stats[2].pvpStatValue)
+        end
+        return GK.Plain(info.name), Num(info.faction), GK.Plain(info.classToken), row
+    end
+end
+
+-- The whole scoreboard at the end of a match: your own line, and both teams
+-- as { mine = { player, ... }, theirs = { ... } } with most kills first. A
+-- player is { name, classToken, kills, deaths, hk, honor, damage, healing }.
+local function Scoreboard()
     local me, short = GK.FullName("player"), GK.Plain((UnitName("player")))
+    local side = GK.PlayerFactionIndex()
+    local mine, teams = {}, { mine = {}, theirs = {} }
     local n = GetNumBattlefieldScores and GetNumBattlefieldScores() or 0
     for i = 1, n do
-        -- GetBattlefieldScore first: it is the call known to return readable
-        -- numbers on Forever. The newer one is the fallback.
-        if GetBattlefieldScore then
-            local name, kills, hk, deaths, honor, _, _, _, _, _, damage, healing = GetBattlefieldScore(i)
-            name = GK.Plain(name)
-            if name and (name == me or name == short) then
-                local row = { kills = Num(kills), hk = Num(hk), deaths = Num(deaths), honor = Num(honor),
-                    damage = Num(damage), healing = Num(healing) }
-                -- Battleground-specific columns: in Warsong Gulch, captures then returns.
-                if GetBattlefieldStatData then
-                    row.caps, row.returns = Num(GetBattlefieldStatData(i, 1)), Num(GetBattlefieldStatData(i, 2))
-                end
-                return row
-            end
-        elseif C_PvP and C_PvP.GetScoreInfo then
-            local info = C_PvP.GetScoreInfo(i)
-            local name = info and GK.Plain(info.name)
-            if name and (name == me or name == short) then
-                local row = { kills = Num(info.killingBlows), hk = Num(info.honorableKills), deaths = Num(info.deaths),
-                    honor = Num(info.honorGained), damage = Num(info.damageDone), healing = Num(info.healingDone) }
-                if type(info.stats) == "table" then
-                    row.caps = info.stats[1] and Num(info.stats[1].pvpStatValue)
-                    row.returns = info.stats[2] and Num(info.stats[2].pvpStatValue)
-                end
-                return row
+        local name, faction, classToken, row = ScoreLine(i)
+        if name then
+            if name == me or name == short then mine = row end
+            if faction == 0 or faction == 1 then
+                local team = faction == side and teams.mine or teams.theirs
+                team[#team + 1] = { name, classToken, row.kills, row.deaths, row.hk, row.honor, row.damage, row.healing }
             end
         end
     end
-    return {}
+    local function order(a, b)
+        if (a[3] or -1) ~= (b[3] or -1) then return (a[3] or -1) > (b[3] or -1) end
+        return a[1] < b[1]
+    end
+    table.sort(teams.mine, order)
+    table.sort(teams.theirs, order)
+    if #teams.mine + #teams.theirs == 0 then teams = nil end
+    return mine, teams
 end
 
 -- Flag captures per team from the counts at the top of the screen ("2/3"):
@@ -108,11 +128,13 @@ local function Save(winner, duration)
     local result = Result(winner)
     if not result then return end
     saved = true
-    local record = MyScore()
+    local record, teams = Scoreboard()
     record.at = time()
     record.map = GK.Plain((GetInstanceInfo())) or GK.Plain(GetZoneText()) or "Battleground"
     record.result = result
     record.who = GK.FullName("player")
+    record.side = GK.PlayerFactionIndex() -- 0 Horde, 1 Alliance
+    record.teams = teams
     duration = Num(duration)
     if not duration and GetBattlefieldInstanceRunTime then
         local ms = Num(GetBattlefieldInstanceRunTime())
@@ -154,12 +176,28 @@ function History:ImportNova()
             for _, e in ipairs(instances) do
                 if type(e) == "table" and e.type == "bg" and e.winningFaction and e.faction and (e.leftTime or e.enteredTime) then
                     local at = e.leftTime or e.enteredTime
+                    -- Nova keeps your own team (not the enemy's) for each match.
+                    local mine
+                    if type(e.group) == "table" then
+                        mine = {}
+                        for name, info in pairs(e.group) do
+                            mine[#mine + 1] = { tostring(name), type(info) == "table" and info.classEnglish or nil }
+                        end
+                        table.sort(mine, function(a, b) return a[1] < b[1] end)
+                    end
+                    local teams = mine and #mine > 0 and { mine = mine, theirs = {} } or nil
                     local dup = false
                     for _, m in ipairs(have) do
-                        if m.map == e.instanceName and math.abs((m.at or 0) - at) < 900 then dup = true break end
+                        if m.map == e.instanceName and math.abs((m.at or 0) - at) < 900 then
+                            dup = true
+                            -- An earlier import didn't bring the team over: add it now.
+                            if m.imported and not m.teams then m.teams, m.side = teams, e.faction end
+                            break
+                        end
                     end
                     if not dup then
                         list[#list + 1] = {
+                            teams = teams, side = e.faction,
                             at = at, map = e.instanceName, who = e.playerName, imported = true,
                             result = (e.winningFaction ~= 0 and e.winningFaction ~= 1) and "draw"
                                 or (e.winningFaction == e.faction and "win" or "loss"),
@@ -239,6 +277,20 @@ function History:BuildView(parent, x, y)
     line:SetPoint("TOPLEFT", x, top - ROW_H + 3)
     line:SetWidth(width)
 
+    -- Hovering a match shows who was on each team.
+    v.hovers = {}
+    for r = 1, ROWS do
+        local h = CreateFrame("Button", nil, parent)
+        h:SetSize(width, ROW_H)
+        h:SetPoint("TOPLEFT", x, top - r * ROW_H + 2)
+        local hot = h:CreateTexture(nil, "HIGHLIGHT")
+        hot:SetAllPoints()
+        hot:SetColorTexture(1, 1, 1, 0.06)
+        h:SetScript("OnEnter", function(self) History:ShowTeams(self, self.match) end)
+        h:SetScript("OnLeave", GameTooltip_Hide)
+        v.hovers[r] = h
+    end
+
     local bottom = top - (ROWS + 1) * ROW_H - 12
     v.page = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     v.page:SetPoint("TOPLEFT", x, bottom - 5)
@@ -293,6 +345,8 @@ function History:Update()
                 local m = list[offset + r]
                 local cells = m and Cells(m)
                 for c, fs in ipairs(row) do fs:SetText(cells and tostring(cells[c]) or "") end
+                v.hovers[r].match = m
+                v.hovers[r]:SetShown(m ~= nil)
             end
             if #list > ROWS then
                 v.page:SetText(string.format("%d-%d of %d. Scroll for more.", offset + 1, math.min(#list, offset + ROWS), #list))
@@ -301,6 +355,43 @@ function History:Update()
             end
         end
     end
+end
+
+-- A tooltip for one match: the final scoreboard, your team first, each
+-- name in its class colour with kills, deaths, honorable kills and honor.
+local FACTION = { [0] = "Horde", [1] = "Alliance" }
+local function Stat(v) return v and tostring(v) or "-" end
+
+function History:ShowTeams(owner, m)
+    if not m then return end
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    GameTooltip:SetText((m.map or "Battleground") .. "  " .. date("%d %b %H:%M", m.at), 1, 0.82, 0)
+    local teams = m.teams
+    if type(teams) ~= "table" then
+        GameTooltip:AddLine("The scoreboard was not recorded for this match.", 0.6, 0.6, 0.65)
+        GameTooltip:Show()
+        return
+    end
+    local function Team(list, label)
+        if #list == 0 then return end
+        GameTooltip:AddLine(" ")
+        -- Matches brought in from another addon carry names only.
+        local hasStats = false
+        for _, p in ipairs(list) do if p[3] or p[4] or p[5] or p[6] then hasStats = true end end
+        GameTooltip:AddDoubleLine(label .. " (" .. #list .. ")", hasStats and "Kills / Deaths / HK / Honor" or " ", 1, 1, 1, 0.6, 0.6, 0.65)
+        for _, p in ipairs(list) do
+            local r, g, b = GK.ClassColor(p[2])
+            local stats = hasStats and (Stat(p[3]) .. " / " .. Stat(p[4]) .. " / " .. Stat(p[5]) .. " / " .. Stat(p[6])) or " "
+            GameTooltip:AddDoubleLine(p[1], stats, r, g, b, 1, 1, 1)
+        end
+    end
+    Team(teams.mine or {}, FACTION[m.side] or "Your team")
+    Team(teams.theirs or {}, m.side and FACTION[1 - m.side] or "Enemy team")
+    if #(teams.theirs or {}) == 0 then
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("The enemy team was not recorded for this match.", 0.6, 0.6, 0.65)
+    end
+    GameTooltip:Show()
 end
 
 -- Opens the settings window on its history tab.

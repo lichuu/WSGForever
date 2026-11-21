@@ -107,6 +107,11 @@ UIParent = CreateFrame("Frame", "UIParent")
 Minimap = CreateFrame("Frame", "Minimap")
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip")
 function GameTooltip_Hide() end
+-- What the tooltip currently says, one string per line, in sim.tip.
+sim.tip = {}
+function GameTooltip:SetText(text) sim.tip = { text } end
+function GameTooltip:AddLine(text) sim.tip[#sim.tip + 1] = text end
+function GameTooltip:AddDoubleLine(left, right) sim.tip[#sim.tip + 1] = left .. " | " .. right end
 UISpecialFrames = {}
 
 -- Plain globals the addon reads ------------------------------------------------

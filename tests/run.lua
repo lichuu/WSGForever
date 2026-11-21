@@ -262,6 +262,35 @@ scenario("the history tab opens, shows the totals, and switches with the setting
     sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
 end)
 
+scenario("hovering a match shows its final scoreboard", function()
+    wipe(GK.db.matches)
+    newMatch()
+    sim.scores = { myRow(),
+        { name = "Amy Ally", classToken = "PRIEST", faction = 1, killingBlows = 0, deaths = 5, honorableKills = 3, honorGained = 40 },
+        { name = "Abe Horde", classToken = "WARRIOR", faction = 0 },
+        { name = "Zed Ally", classToken = "WARRIOR", faction = 1, killingBlows = 9, deaths = 2, honorableKills = 30, honorGained = 250 } }
+    sim.winner = 0
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    local m = GK.db.matches[1]
+    check(m.teams and #m.teams.mine == 2 and #m.teams.theirs == 2 and m.side == 0, "teams not recorded")
+    sim.printed = {}
+    SlashCmdList.WSGFOREVER("history")
+    local views = GK.modules.History.views
+    local hover = views[#views].hovers[1]
+    check(hover:IsShown() and not views[#views].hovers[2]:IsShown(), "hover areas should only cover rows with a match")
+    hover:GetScript("OnEnter")(hover)
+    local tip = table.concat(sim.tip, " / ")
+    check(tip:find("Horde %(2%) | Kills / Deaths / HK / Honor") and tip:find("Alliance %(2%)"), "tooltip headings wrong: " .. tip)
+    -- most kills first, with the numbers; a player with no readable numbers shows dashes
+    check(tip:find("Test%-Player | 4 / 3 / 21 / 187 / Abe Horde | %- / %- / %- / %-"), "your team wrong: " .. tip)
+    check(tip:find("Zed Ally | 9 / 2 / 30 / 250 / Amy Ally | 0 / 5 / 3 / 40"), "enemy team wrong: " .. tip)
+    m.teams = nil
+    hover:GetScript("OnEnter")(hover)
+    check(table.concat(sim.tip, " / "):find("not recorded") ~= nil, "a match without a scoreboard should say so")
+    SlashCmdList.WSGFOREVER("history")
+    sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
+end)
+
 scenario("battlegrounds import from Nova Instance Tracker once, dungeons are skipped", function()
     wipe(GK.db.matches)
     -- The shape Nova Instance Tracker saves, taken from a real file.
@@ -278,6 +307,11 @@ scenario("battlegrounds import from Nova Instance Tracker once, dungeons are ski
     check(newest and newest.result == "win" and newest.kills == 3 and newest.honor == 267 and newest.seconds == 554, "newest match wrong")
     check(oldest and oldest.result == "loss" and oldest.deaths == 4, "older match wrong")
     check(GK.modules.History:ImportNova() == 0, "importing twice added duplicates")
+    -- your own team comes over from Nova, including onto matches imported before teams existed
+    NITdatabase.global.PvP.instances[2].group = { Tear = { classEnglish = "PRIEST" }, Khan = { classEnglish = "WARRIOR" } }
+    newest.teams = nil
+    GK.modules.History:ImportNova()
+    check(newest.teams and #newest.teams.mine == 2 and newest.teams.mine[1][1] == "Khan" and newest.side == 0, "team not filled in from Nova")
     NITdatabase = nil
     check(GK.modules.History:ImportNova() == nil, "import without Nova should report nothing to read")
 end)
@@ -423,6 +457,17 @@ scenario("the group version check hears others, ignores itself, and mentions a n
     check(listed:find("Hella Slick  0.8.0") and listed:find("You have version 0.6.0"), "who list wrong: " .. listed)
     sim.printed = {}
 end)
+
+-- Release pages show RELEASE_NOTES.md, which must be the newest version's notes.
+current = "release notes"
+count = count + 1
+do
+    local want = assert(loadfile(dir .. "/tests/release_notes.lua"))("check", dir)
+    local f = io.open(dir .. "/RELEASE_NOTES.md")
+    local have = f and f:read("*a")
+    if f then f:close() end
+    check(have == want, "RELEASE_NOTES.md is out of date: run lua5.1 tests/release_notes.lua")
+end
 
 if #failures > 0 then
     sim.realPrint(#failures .. " failure(s) in " .. count .. " scenarios:")
