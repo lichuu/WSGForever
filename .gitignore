@@ -1,2 +1,3 @@
 tools/screenshots/local.sh
 tools/screenshots/_*.p*
+tools/screenshots/__pycache__/

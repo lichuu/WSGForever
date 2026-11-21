@@ -1,16 +1,37 @@
 -- Development helper for WSGForever's screenshots (tools/screenshots/shoot.py
 -- drives it with /run lines). Not shipped: it lives outside the addon folder.
 --
---   WSGFShot.Caption(n, frame, point, relPoint, x, y, title, text)
---       a real game tooltip next to a named frame, as a caption
---   WSGFShot.Clear()             removes every caption
---   WSGFShot.Dump(names)         saves where those frames are on screen, in
---                                pixels, to WSGForeverShotsDB (written on /reload)
+--   WSGFShot.Stage(name)   shows that shot's captions (see CAPTIONS below)
+--   WSGFShot.Clear()       removes every caption
+--   WSGFShot.Dump()        saves where the addon's frames are on screen, in
+--                          pixels, to WSGForeverShotsDB (written on /reload)
+--
+-- Captions live here rather than in shoot.py because a chat line holds at
+-- most 255 characters, so the driver only sends short calls.
+
+-- The frames shoot.py crops around.
+local FRAMES = { "WSGForeverEnemies", "WSGForeverCallouts", "WSGForeverABCallouts", "WSGForeverMatchTimer",
+    "WSGForeverQueue", "WSGForeverOptions", "WSGForeverFlagSpawn", "WSGForeverEFCLow",
+    "WSGForeverRezTimer", "UIWidgetTopCenterContainerFrame", "BattlefieldMapFrame" }
+
+-- Per shot: { frame, point, relPoint, x, y, title, text }.
+local CAPTIONS = {
+    ["enemy-frames"] = { { "WSGForeverEnemies", "TOPRIGHT", "TOPLEFT", -14, -30, "Enemy frames",
+        "Class, health, range and who is dead. Left click targets, right click focuses, middle click pings." } },
+    ["timers"] = { { "WSGForeverFlagSpawn", "RIGHT", "LEFT", -40, 0, "Flag and match timers",
+        "Drop countdown, flag spawn, the enemy carrier low banner, and how long the match has run." } },
+    ["callout-bar"] = { { "WSGForeverCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Callout bar",
+        "One click tells your team where the enemy flag carrier is." } },
+    ["ab-callouts"] = { { "WSGForeverABCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Arathi Basin callouts",
+        "Incoming, big incoming, safe and help for every node, each with its own icon." } },
+    ["queue-timers"] = { { "WSGForeverQueue", "RIGHT", "LEFT", -16, 0, "Queue timers",
+        "Time in queue against the estimate, and a countdown to enter when it pops." } },
+}
 
 WSGFShot = {}
 local captions = {}
 
-function WSGFShot.Caption(n, frameName, point, relPoint, x, y, title, text)
+local function Caption(n, frameName, point, relPoint, x, y, title, text)
     local anchor = _G[frameName]
     if not anchor then print("WSGFShot: no frame " .. tostring(frameName)) return end
     local t = captions[n]
@@ -28,6 +49,11 @@ function WSGFShot.Caption(n, frameName, point, relPoint, x, y, title, text)
     t:Show()
 end
 
+function WSGFShot.Stage(name)
+    WSGFShot.Clear()
+    for n, c in ipairs(CAPTIONS[name] or {}) do Caption(n, unpack(c)) end
+end
+
 function WSGFShot.Clear()
     for _, t in pairs(captions) do t:Hide() end
 end
@@ -41,11 +67,11 @@ local function Rect(f)
     return { math.floor(l * k), math.floor(physH - (b + h) * k), math.ceil((l + w) * k), math.ceil(physH - b * k) }
 end
 
-function WSGFShot.Dump(names)
+function WSGFShot.Dump()
     WSGForeverShotsDB = { rects = {}, at = time() }
-    for _, name in ipairs(names) do
+    for _, name in ipairs(FRAMES) do
         local f = _G[name]
         if f and f.IsVisible and f:IsVisible() then WSGForeverShotsDB.rects[name] = Rect(f) end
     end
-    print("WSGFShot: saved " .. #names .. " frames, /reload to write them")
+    print("WSGFShot: saved frame positions, /reload to write them")
 end

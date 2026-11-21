@@ -39,45 +39,21 @@ OUT = os.path.join(REPO, "media", "gallery")
 ENV = dict(os.environ, WINEPREFIX=os.environ["WSGF_WINEPREFIX"], WINEDEBUG="-all")
 WINPY_WIN = "Z:" + bot.WINPY.replace("/", "\\")  # the same folder as Windows sees it
 
-# Frames whose positions the shots use.
-FRAMES = ["WSGForeverEnemies", "WSGForeverCallouts", "WSGForeverABCallouts", "WSGForeverMatchTimer",
-          "WSGForeverQueue", "WSGForeverOptions", "WSGForeverFlagSpawn", "WSGForeverEFCLow",
-          "WSGForeverRezTimer", "UIWidgetTopCenterContainerFrame", "BattlefieldMapFrame"]
-
-# Each shot: lines to run first, captions (frame, point, relPoint, x, y, title, text),
-# the frames to crop around, extra room on each side (left, top, right, bottom), and the output name.
+# Each shot: lines to run first, the frames to crop around, and extra room on
+# each side (left, top, right, bottom). Captions are in the helper addon.
 SHOTS = {
-    "enemy-frames": dict(
-        run=["/run WSGForever.SetEnemyStyle('flat')"],
-        captions=[("WSGForeverEnemies", "TOPRIGHT", "TOPLEFT", -14, -30, "Enemy frames",
-                   "Class, health, range and who is dead. Left click targets, right click focuses, middle click pings.")],
-        crop=["WSGForeverEnemies"], pad=(420, 40, 40, 40)),
-    "timers": dict(
-        run=[],
-        captions=[("WSGForeverFlagSpawn", "RIGHT", "LEFT", -40, 0, "Flag and match timers",
-                   "Drop countdown, flag spawn, the enemy carrier low banner, and how long the match has run.")],
-        crop=["WSGForeverFlagSpawn", "WSGForeverEFCLow", "WSGForeverMatchTimer", "WSGForeverRezTimer"], pad=(440, 60, 80, 40)),
-    "callout-bar": dict(
-        run=["/run WSGForever.modules.Callouts.abFrame:Hide()"],
-        captions=[("WSGForeverCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Callout bar",
-                   "One click tells your team where the enemy flag carrier is.")],
-        crop=["WSGForeverCallouts"], pad=(40, 110, 40, 30)),
-    "ab-callouts": dict(
-        run=["/run local c=WSGForever.modules.Callouts c.frame:Hide() c.abFrame:Show()"],
-        captions=[("WSGForeverABCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Arathi Basin callouts",
-                   "Incoming, big incoming, safe and help for every node, each with its own icon.")],
-        crop=["WSGForeverABCallouts"], pad=(60, 110, 60, 30)),
-    "queue-timers": dict(
-        run=[],
-        captions=[("WSGForeverQueue", "RIGHT", "LEFT", -16, 0, "Queue timers",
-                   "Time in queue against the estimate, and a countdown to enter when it pops.")],
-        crop=["WSGForeverQueue"], pad=(380, 50, 50, 40)),
-    "settings": dict(
-        run=["/fc"], captions=[], crop=["WSGForeverOptions"], pad=(30, 30, 30, 30)),
+    "enemy-frames": dict(run=["/run WSGForever.SetEnemyStyle('flat')"], crop=["WSGForeverEnemies"], pad=(420, 40, 40, 40)),
+    "timers": dict(run=[], crop=["WSGForeverFlagSpawn", "WSGForeverEFCLow", "WSGForeverMatchTimer", "WSGForeverRezTimer"],
+                   pad=(440, 60, 80, 40)),
+    "callout-bar": dict(run=["/run WSGForever.modules.Callouts.abFrame:Hide()"], crop=["WSGForeverCallouts"], pad=(40, 110, 40, 30)),
+    "ab-callouts": dict(run=["/run local c=WSGForever.modules.Callouts c.frame:Hide() c.abFrame:Show()"],
+                        crop=["WSGForeverABCallouts"], pad=(60, 110, 60, 30)),
+    "queue-timers": dict(run=[], crop=["WSGForeverQueue"], pad=(380, 50, 50, 40)),
+    "settings": dict(run=["/fc"], crop=["WSGForeverOptions"], pad=(30, 30, 30, 30)),
     "match-history": dict(
         run=["/fc history",
              "/run local h=WSGForever.modules.History local v=h.views[#h.views].hovers[1] v:GetScript('OnEnter')(v)"],
-        captions=[], crop=["WSGForeverOptions"], pad=(30, 30, 520, 30)),
+        crop=["WSGForeverOptions"], pad=(30, 30, 520, 30)),
 }
 STYLES = ["flat", "classic", "raid", "dark", "darkcompact", "large"]
 
@@ -143,23 +119,18 @@ def crop(img, boxes, pad, size=(1280, 720)):
     return img.crop((l, t, r, b)).resize(size, Image.LANCZOS)
 
 
-def lua_str(s):
-    return "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'"
-
-
 def shoot(names):
     boxes = rects()
     os.makedirs(OUT, exist_ok=True)
-    say("/fc test")
+    say("/run WSGForever.SetTestMode(true)")
     time.sleep(1.5)
     for name in names:
         spec = SHOTS[name]
         for line in spec["run"]:
             say(line)
             time.sleep(0.8)
-        for n, (frame, point, rel, x, y, title, text) in enumerate(spec["captions"], 1):
-            say(f"/run WSGFShot.Caption({n},'{frame}','{point}','{rel}',{x},{y},{lua_str(title)},{lua_str(text)})")
-            time.sleep(0.5)
+        say(f"/run WSGFShot.Stage('{name}')")
+        time.sleep(0.5)
         say("/run GameTooltip:Hide()") if not name == "match-history" else None
         time.sleep(1.2)
         raw = os.path.join(HERE, "_raw.png")
@@ -175,14 +146,14 @@ def shoot(names):
             say("/fc options")
         say("/run local c=WSGForever.modules.Callouts c:Refresh()")
         time.sleep(0.5)
-    say("/fc test")
+    say("/run WSGForever.SetTestMode(false)")
     os.unlink(os.path.join(HERE, "_raw.png"))
 
 
 def shoot_styles():
     """One image with the enemy frames in several styles side by side."""
     boxes = rects()
-    say("/fc test")
+    say("/run WSGForever.SetTestMode(true)")
     time.sleep(1.5)
     tiles = []
     raw = os.path.join(HERE, "_raw.png")
@@ -193,7 +164,7 @@ def shoot_styles():
         e = boxes["WSGForeverEnemies"]
         tiles.append(Image.open(raw).convert("RGB").crop((e[0] - 20, e[1] - 30, e[0] + 300, e[1] + 470)))
     say("/run WSGForever.SetEnemyStyle('flat')")
-    say("/fc test")
+    say("/run WSGForever.SetTestMode(false)")
     sheet = Image.new("RGB", (len(tiles) * 320, 500))
     for i, t in enumerate(tiles):
         sheet.paste(t, (i * 320, 0))
@@ -213,13 +184,13 @@ def main():
         shutil.rmtree(INSTALLED, ignore_errors=True)
         print("removed")
     elif cmd == "dump":
-        say("/fc test")
+        say("/run WSGForever.SetTestMode(true)")
         time.sleep(1.5)
         say("/run WSGForever.modules.Callouts.abFrame:Show() WSGForever.modules.Options:Open('settings')")
         time.sleep(1)
-        say("/run WSGFShot.Dump(" + "{" + ",".join(f"'{f}'" for f in FRAMES) + "})")
+        say("/run WSGFShot.Dump()")
         time.sleep(0.5)
-        say("/fc test")
+        say("/run WSGForever.SetTestMode(false)")
         reload()
         print(json.dumps(rects(), indent=1))
     elif cmd == "shots":
