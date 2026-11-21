@@ -160,6 +160,10 @@ C_PvP = { GetScoreInfo = function(i) return Scores()[i] end }
 function GetBattlefieldScore(i)
     local r = Scores()[i]
     if not r then return nil end
+    -- sim.scoreLayout "modern" has no rank column, as on newer clients.
+    if sim.scoreLayout == "modern" then
+        return r.name, r.killingBlows, r.honorableKills, r.deaths, r.honorGained, r.faction, "Race", "Class", r.classToken, r.damageDone, r.healingDone
+    end
     return r.name, r.killingBlows, r.honorableKills, r.deaths, r.honorGained, r.faction, 0, "Race", "Class", r.classToken, r.damageDone, r.healingDone
 end
 function GetBattlefieldStatData(i, j)

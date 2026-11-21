@@ -303,6 +303,18 @@ scenario("hovering a match shows its final scoreboard", function()
     sim.fire("UPDATE_BATTLEFIELD_SCORE")
     local m = GK.db.matches[1]
     check(m.teams and #m.teams.mine == 2 and #m.teams.theirs == 2 and m.side == 0, "teams not recorded")
+    check(m.teams.theirs[1][1] == "Zed Ally" and m.teams.theirs[1][2] == "WARRIOR" and m.damage == 9000 and m.healing == 42000,
+        "class or damage not read from the scoreboard")
+    -- the same on a client whose scoreboard has no rank column
+    wipe(GK.db.matches)
+    newMatch()
+    sim.scoreLayout = "modern"
+    sim.winner = 0
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    sim.scoreLayout = nil
+    m = GK.db.matches[1]
+    check(m and m.teams.theirs[1][2] == "WARRIOR" and m.teams.mine[1][2] == "PRIEST" and m.damage == 9000 and m.healing == 42000,
+        "class or damage wrong on the other scoreboard layout")
     sim.printed = {}
     SlashCmdList.WSGFOREVER("history")
     local views = GK.modules.History.views

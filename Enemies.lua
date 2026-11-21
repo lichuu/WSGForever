@@ -612,6 +612,11 @@ local function BuildRoster()
     return list
 end
 
+-- The class an enemy was seen as during the match, if any.
+function GK.EnemyClass(name)
+    return classCache[name]
+end
+
 -- How many enemies are dead right now (for the rez timer).
 function GK.DeadEnemyCount()
     local n = 0

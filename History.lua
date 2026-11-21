@@ -38,14 +38,28 @@ local function ScoreLine(i)
     -- GetBattlefieldScore first: it is the call known to return readable
     -- numbers on Forever. The newer one is the fallback.
     if GetBattlefieldScore then
-        local name, kills, hk, deaths, honor, faction, _, _, _, classToken, damage, healing = GetBattlefieldScore(i)
+        local r = { GetBattlefieldScore(i) }
+        local name, kills, hk, deaths, honor, faction = r[1], r[2], r[3], r[4], r[5], r[6]
+        -- What follows differs between clients (some have a rank column), so
+        -- find the class token by what it is: damage and healing come after it.
+        local classToken, at
+        for k = 7, 12 do
+            local v = GK.Plain(r[k])
+            if type(v) == "string" and RAID_CLASS_COLORS and RAID_CLASS_COLORS[v] then classToken, at = v, k break end
+        end
         local row = { kills = Num(kills), hk = Num(hk), deaths = Num(deaths), honor = Num(honor),
-            damage = Num(damage), healing = Num(healing) }
+            damage = at and Num(r[at + 1]), healing = at and Num(r[at + 2]) }
+        -- The newer call names its fields, so use it for the class if needed.
+        if not classToken and C_PvP and C_PvP.GetScoreInfo then
+            local ok, info = pcall(C_PvP.GetScoreInfo, i)
+            local v = ok and type(info) == "table" and GK.Plain(info.classToken)
+            if type(v) == "string" then classToken = v end
+        end
         -- Battleground-specific columns: in Warsong Gulch, captures then returns.
         if GetBattlefieldStatData then
             row.caps, row.returns = Num(GetBattlefieldStatData(i, 1)), Num(GetBattlefieldStatData(i, 2))
         end
-        return GK.Plain(name), Num(faction), GK.Plain(classToken), row
+        return GK.Plain(name), Num(faction), classToken, row
     elseif C_PvP and C_PvP.GetScoreInfo then
         local info = C_PvP.GetScoreInfo(i)
         if not info then return nil end
@@ -66,6 +80,17 @@ local function Scoreboard()
     local me, short = GK.FullName("player"), GK.Plain((UnitName("player")))
     local side = GK.PlayerFactionIndex()
     local mine, teams = {}, { mine = {}, theirs = {} }
+    -- If the scoreboard won't say a player's class, use what was seen of them
+    -- during the match: teammates from the raid, enemies from the enemy frames.
+    local seen = {}
+    for u = 1, 40 do
+        local unit = "raid" .. u
+        if GK.Plain(UnitExists(unit)) then
+            local full, _, token = GK.FullName(unit), UnitClass(unit)
+            token = GK.Plain(token)
+            if full and token then seen[full] = token end
+        end
+    end
     local n = GetNumBattlefieldScores and GetNumBattlefieldScores() or 0
     for i = 1, n do
         local name, faction, classToken, row = ScoreLine(i)
@@ -73,6 +98,7 @@ local function Scoreboard()
             if name == me or name == short then mine = row end
             if faction == 0 or faction == 1 then
                 local team = faction == side and teams.mine or teams.theirs
+                classToken = classToken or seen[name] or (GK.EnemyClass and GK.EnemyClass(name))
                 team[#team + 1] = { name, classToken, row.kills, row.deaths, row.hk, row.honor, row.damage, row.healing }
             end
         end
