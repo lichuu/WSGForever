@@ -25,6 +25,7 @@ local defaults = {
     enemyScale = 1,
     battleMap = true, -- class-coloured, larger teammate dots on the battlefield map
     history = true, -- keep a record of finished battlegrounds
+    matchTimer = true, -- a clock for how long the battleground has run
     enemyNames = true, -- names on the enemy frames
     enemyStyle = "flat", -- look of the enemy frames, one of GK.enemyStyles
     minimapButton = true,
@@ -450,6 +451,7 @@ local toggleList = {
     { "bgmap", "battleMap", "battlefield map: teammates as larger class-coloured dots" },
     { "record", "history", "record each finished battleground in the match history" },
     { "names", "enemyNames", "names on the enemy frames" },
+    { "timer", "matchTimer", "match timer by the score" },
 }
 local toggles = { raidflag = "raidFlag" } -- old name still works
 for _, t in ipairs(toggleList) do toggles[t[1]] = t[2] end
@@ -458,6 +460,7 @@ for _, t in ipairs(toggleList) do toggles[t[1]] = t[2] end
 local scaleList = {
     { "callouts", "Callouts" },
     { "abcallouts", "AB callouts" },
+    { "timer", "Match timer" },
     { "enemies", "Enemies" },
     { "rez", "RezTimer" },
     { "lowalert", "EFC low alert" },

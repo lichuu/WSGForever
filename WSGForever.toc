@@ -11,6 +11,7 @@ Core.lua
 Callouts.lua
 Carriers.lua
 RezTimer.lua
+MatchTimer.lua
 AutoAssist.lua
 Enemies.lua
 BlizzCarriers.lua

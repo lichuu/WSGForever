@@ -262,6 +262,25 @@ scenario("the history tab opens, shows the totals, and switches with the setting
     sim.instanceType, sim.winner, sim.scores = "pvp", nil, {}
 end)
 
+scenario("the match timer shows the game's running time, or the time since zoning in", function()
+    newMatch()
+    sim.runTimeMs = 754000
+    sim.run(1)
+    check(sim.showing("^12:34$") ~= nil, "timer should show the game's count")
+    sim.runTimeMs = 3725000
+    sim.run(1)
+    check(sim.showing("^1:02:05$") ~= nil, "timer should show hours past sixty minutes")
+    sim.runTimeMs = nil
+    newMatch()
+    sim.run(65.5)
+    check(sim.showing("^1:05$") ~= nil, "without the game's count it should time from zoning in")
+    SlashCmdList.WSGFOREVER("timer")
+    check(not WSGForeverMatchTimer:IsShown(), "timer did not turn off")
+    SlashCmdList.WSGFOREVER("timer")
+    check(WSGForeverMatchTimer:IsShown(), "timer did not turn back on")
+    sim.printed = {}
+end)
+
 scenario("the scoreboard's team tabs don't empty the enemy list or cut a team from the history", function()
     wipe(GK.db.matches)
     newMatch()
