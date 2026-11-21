@@ -1,6 +1,7 @@
 # WSGForever
 
 ## Unreleased
+- Arathi Basin callouts: a second callout bar appears in Arathi Basin with Incoming, Big incoming, Safe and Help for each of the five nodes, each with its own icon. Each can be bound to a key, and the bar moves and resizes separately (`/fc scale abcallouts`).
 - Match history: hover a match to see its final scoreboard: both teams in class colours with each player's kills, deaths, honorable kills and honor. Matches imported from Nova Instance Tracker show your own team's names only; click the import button again to add them to matches you already imported.
 
 ## 0.7.0

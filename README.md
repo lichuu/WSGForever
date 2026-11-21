@@ -19,7 +19,7 @@ The whole enemy team with class, health, mana, range, who is dead and how many t
 ### Callout bar
 ![The callout bar](media/gallery/callout-bar.jpg)
 
-One click tells your team where the enemy flag carrier is: both bases, midfield, and buttons for pick up, cap and "EFC low".
+One click tells your team where the enemy flag carrier is: both bases, midfield, and buttons for pick up, cap and "EFC low". In Arathi Basin the bar switches to Incoming, Big incoming, Safe and Help for each of the five nodes.
 
 ### Battlefield map
 ![Teammates as class-coloured dots on the battlefield map](media/gallery/battlefield-map.jpg)

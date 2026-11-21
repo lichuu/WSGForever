@@ -35,4 +35,24 @@
 	<Binding name="CLICK WSGForeverCallout24:LeftButton" category="ADDONS"/>
 	<Binding name="CLICK WSGForeverCallout25:LeftButton" category="ADDONS"/>
 	<Binding name="CLICK WSGForeverCallout26:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout1:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout2:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout3:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout4:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout5:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout6:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout7:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout8:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout9:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout10:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout11:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout12:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout13:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout14:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout15:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout16:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout17:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout18:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout19:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverABCallout20:LeftButton" category="ADDONS"/>
 </Bindings>

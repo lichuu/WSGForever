@@ -401,6 +401,18 @@ scenario("the style dropdown lists every style, and picking a style or texture a
     slash("options")
 end)
 
+scenario("Arathi Basin shows its own callout bar, and Warsong Gulch its own", function()
+    check(WSGForeverCallouts:IsShown() and not WSGForeverABCallouts:IsShown(), "Warsong Gulch should show only its own bar")
+    sim.zone, sim.instanceID = "Arathi Basin", 529
+    sim.fire("PLAYER_ENTERING_WORLD")
+    check(WSGForeverABCallouts:IsShown() and not WSGForeverCallouts:IsShown(), "Arathi Basin should show only its own bar")
+    check(WSGForeverABCallout1:GetAttribute("macrotext") == "/i INC Stables", "first AB callout wrong: " .. tostring(WSGForeverABCallout1:GetAttribute("macrotext")))
+    check(WSGForeverABCallout20.msg == "HELP at Farm" and WSGForeverABCallout13.msg == "Lumber Mill SAFE", "AB callouts out of order")
+    sim.zone, sim.instanceID = nil, nil
+    sim.fire("PLAYER_ENTERING_WORLD")
+    check(WSGForeverCallouts:IsShown() and not WSGForeverABCallouts:IsShown(), "back in Warsong Gulch the bars did not switch")
+end)
+
 -- Key bindings and the group version check ------------------------------------------
 
 scenario("every key binding presses a button that exists and has a name in the menu", function()
@@ -415,7 +427,7 @@ scenario("every key binding presses a button that exists and has a name in the m
             check(_G[button] ~= nil, "binding presses a button that does not exist: " .. button)
         end
     end
-    check(n == 31 and clicks == 29, "expected 31 bindings with 29 button presses, got " .. n .. " and " .. clicks)
+    check(n == 51 and clicks == 49, "expected 51 bindings with 49 button presses, got " .. n .. " and " .. clicks)
     check(BINDING_HEADER_WSGFOREVER == "WSGForever", "bindings header missing")
     check(WSGForeverCallout1.msg == "EFC Is Alliance Flag Room" and WSGForeverCallout26.msg:find("LOW") ~= nil, "callout buttons out of order")
     -- the carrier keys point at the carrier slot once someone is carrying

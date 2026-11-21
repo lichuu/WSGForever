@@ -67,6 +67,7 @@ end
 
 local WSG_IDS = { [489] = true, [2106] = true }
 local AV_IDS = { [30] = true, [2197] = true }
+local AB_IDS = { [529] = true, [2107] = true }
 
 local function InstanceInfo()
     local name, instanceType, _, _, _, _, _, instanceID = GetInstanceInfo()
@@ -82,6 +83,12 @@ function GK.InWSG()
     local name, instanceType, id = InstanceInfo()
     if instanceType ~= "pvp" then return false end
     return WSG_IDS[id] or name == "Warsong Gulch" or GetZoneText() == "Warsong Gulch"
+end
+
+function GK.InAB()
+    local name, instanceType, id = InstanceInfo()
+    if instanceType ~= "pvp" then return false end
+    return AB_IDS[id] or name == "Arathi Basin" or GetZoneText() == "Arathi Basin"
 end
 
 function GK.InAV()
@@ -421,6 +428,7 @@ for _, t in ipairs(toggleList) do toggles[t[1]] = t[2] end
 -- Everything with a size: { command name, key in db.scales }.
 local scaleList = {
     { "callouts", "Callouts" },
+    { "abcallouts", "AB callouts" },
     { "enemies", "Enemies" },
     { "rez", "RezTimer" },
     { "lowalert", "EFC low alert" },
