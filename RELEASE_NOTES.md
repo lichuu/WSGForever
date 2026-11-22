@@ -1,1 +1,2 @@
-- The match timer now starts when the gates open, not when the battleground is created. It keeps its time through a reload, and works out the start when you join a match already under way.
+- Queue pop countdown: when a battleground queue pops, a line showing how long is left to enter, red for the last five seconds, just under the game's own "ready" window. Nothing shows while you are only queued. An optional ding on the pop (off by default) is heard even with sound effects muted.
+- The match timer also starts when your Preparation buff comes off, as one more way of knowing the gates have opened.

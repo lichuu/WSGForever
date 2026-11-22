@@ -1,6 +1,6 @@
 # WSGForever
 
-## Unreleased
+## 0.8.2
 - Queue pop countdown: when a battleground queue pops, a line showing how long is left to enter, red for the last five seconds, just under the game's own "ready" window. Nothing shows while you are only queued. An optional ding on the pop (off by default) is heard even with sound effects muted.
 - The match timer also starts when your Preparation buff comes off, as one more way of knowing the gates have opened.
 
