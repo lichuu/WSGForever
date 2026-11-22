@@ -1,48 +1,62 @@
 <p align="center"><img src="media/banner.jpg" alt="WSGForever: Warsong Gulch tools for WoW Forever"></p>
 
-WSGForever is a Warsong Gulch addon for **World of Warcraft: Forever**. It helps your team track both flag carriers, call out where the enemy carrier is, watch the enemy team, and time the graveyard waves.
+The Warsong Gulch addon for **World of Warcraft: Forever**. See who carries each flag and how hurt they are, know when the next graveyard wave lands, watch the whole enemy team, and tell your team where the enemy carrier is in one click.
 
 Get it on [CurseForge](https://www.curseforge.com/wow/addons/wsgforever) or from the [releases page](https://github.com/lichuu/WSGForever/releases).
 
+![A Warsong Gulch match with WSGForever](media/gallery/overview.jpg)
+
+## Why WSGForever
+- **One addon instead of a pile of WeakAuras.** Callouts, carrier tracking, timers, enemy frames and match history in one place, and they work together.
+- **Built for Forever.** Forever hides some information from addons. Everything here is built around what the game actually allows, and tested in real matches.
+- **Stays out of your way.** Every part can be turned off, moved and resized, with eleven looks for the enemy frames, including ones that follow ElvUI and EllesmereUI.
+- **Free and open source** (MIT).
+
 ## Features
 
-### Flag and rez timers
-![Drop countdown, rez timer, flag spawn timer and the enemy carrier low banner](media/gallery/timers.jpg)
+### Flag carriers and timers
+![Carrier health, match timer and rez timer at the top of the screen](media/gallery/carriers-timers.jpg)
 
-Carrier health sits beside the score. A countdown shows when a dropped flag returns and when the flags spawn again after a capture, and a red banner warns when the enemy carrier is under half health. The rez timer counts down to the next graveyard wave in every battleground.
+Both flag carriers' health beside the score, a countdown when a flag is dropped, and one when the flags spawn again after a capture. A red banner warns when the enemy carrier is under half health. A match timer beside the score counts from the moment the gates open, and the rez timer counts down to the next graveyard wave with how many enemies are waiting to come back.
 
-### Enemy frames
-![The enemy team list](media/gallery/enemy-frames.jpg)
+### Enemy frames and callouts
+![Enemy frames, callout bar and battlefield map during a match](media/gallery/in-match.jpg)
 
-The whole enemy team with class, health, mana, range, who is dead and how many teammates are targeting each player. The flag carrier is highlighted. Left click targets, right click sets focus, middle click pings. Pick one of eleven looks on the settings tab, including ones that follow your ElvUI or EllesmereUI settings, and optionally a bar texture and font, including those your other addons share.
+The whole enemy team with class, health, mana, range, who is dead and how many of your team are on each player; the flag carrier is highlighted. Left click targets, right click sets focus, middle click pings. The callout bar tells your team where the enemy carrier is in one click, from flag room to midfield, with buttons for pick up, cap and enemy carrier low.
 
-### Callout bar
-![The callout bar](media/gallery/callout-bar.jpg)
+### Arathi Basin callouts
+![The Arathi Basin callout bar](media/gallery/ab-callouts.jpg)
 
-One click tells your team where the enemy flag carrier is: both bases, midfield, and buttons for pick up, cap and "EFC low". In Arathi Basin the bar switches to Incoming, Big incoming, Safe and Help for each of the five nodes.
+In Arathi Basin the bar switches to Incoming, Big incoming, Safe and Help for each of the five nodes, each with its own icon.
+
+### Match history
+![Match history with a match's final scoreboard](media/gallery/match-history.jpg)
+
+Every battleground you finish is recorded: result, flag score, length, and your kills, deaths, honor, captures and returns. Hover a match to see its final scoreboard, both teams in class colours. Already using Nova Instance Tracker? Import the battlegrounds it recorded.
 
 ### Battlefield map
 ![Teammates as class-coloured dots on the battlefield map](media/gallery/battlefield-map.jpg)
 
-Teammates show as larger dots in their class colours. `/fc scale map` and `/fc scale mapdots` resize the map and the dots.
+Teammates show as larger dots in their class colours.
+
+### Queue pop countdown
+![Countdown under the battleground ready window](media/gallery/queue-pop.jpg)
+
+When your queue pops, a countdown under the ready window shows how long is left to enter. An optional ding plays even with sound effects muted.
 
 ### Settings
 ![The settings window](media/gallery/settings.jpg)
 
-A minimap button opens a settings page for every feature, also listed under Options > AddOns. Every option is a `/fc` command too.
-
-### Match history
-Every battleground you finish is recorded: win or loss, the flag score, how long it took, and your kills, deaths, honor, captures and returns. It lives on the Match history tab of the settings window (`/fc history`), with your overall record at the top. If you use Nova Instance Tracker, you can import the battlegrounds it already recorded.
+A minimap button opens a settings window with every option, and a second tab for match history. It is also under Options > AddOns.
 
 ### Key bindings
-Every callout can be bound to a key in the game's Key Bindings menu, under WSGForever. So can targeting or pinging the enemy flag carrier and pinging your own.
+Every callout can be bound to a key in the game's Key Bindings menu, under WSGForever, and so can targeting or pinging the enemy flag carrier and pinging your own.
 
 ### Also
-- A countdown of how long is left to enter when a battleground queue pops.
-- A match timer beside the score, showing how long the battleground has run.
 - A flag icon on your team's carrier in the raid frames.
 - The game's carrier frames moved up beside the score.
 - Raid assist for everyone when you lead a battleground.
+- `/fc who` shows who else in your group runs WSGForever.
 
 ## Install
 Copy the `WSGForever` folder into `World of Warcraft/_forever_/Interface/AddOns/`.
