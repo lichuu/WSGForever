@@ -18,8 +18,8 @@ local FRAMES = { "WSGForeverEnemies", "WSGForeverCallouts", "WSGForeverABCallout
 local CAPTIONS = {
     ["enemy-frames"] = { { "WSGForeverEnemies", "TOPRIGHT", "TOPLEFT", -14, -30, "Enemy frames",
         "Class, health, range and who is dead. Left click targets, right click focuses, middle click pings." } },
-    ["timers"] = { { "WSGForeverFlagSpawn", "RIGHT", "LEFT", -40, 0, "Flag and match timers",
-        "Drop countdown, flag spawn, the enemy carrier low banner, and how long the match has run." } },
+    ["timers"] = { { "WSGForeverFlagSpawn", "RIGHT", "LEFT", -60, 10, "Flag, match and rez timers",
+        "A countdown when a flag is dropped and when the flags spawn again, how long the match has run, and when the next graveyard wave lands. A red banner when the enemy carrier is low." } },
     ["callout-bar"] = { { "WSGForeverCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Callout bar",
         "One click tells your team where the enemy flag carrier is." } },
     ["ab-callouts"] = { { "WSGForeverABCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Arathi Basin callouts",
@@ -74,4 +74,23 @@ function WSGFShot.Dump()
         if f and f.IsVisible and f:IsVisible() then WSGForeverShotsDB.rects[name] = Rect(f) end
     end
     print("WSGFShot: saved frame positions, /reload to write them")
+end
+
+-- Tidy the screen for a shot: hide your own unit frame, and show the version
+-- a release would show instead of "development copy".
+function WSGFShot.Tidy(version)
+    if PlayerFrame then PlayerFrame:SetAlpha(0) end
+    local function walk(f)
+        for _, r in ipairs({ f:GetRegions() }) do
+            if r.GetText and r:GetText() == "development copy" then r:SetText("version " .. version) end
+        end
+        for _, c in ipairs({ f:GetChildren() }) do walk(c) end
+    end
+    if WSGForeverOptions then walk(WSGForeverOptions) end
+end
+
+-- A believable rez countdown for the preview, which otherwise reads "?".
+function WSGFShot.Rez(text)
+    local f = WSGForeverRezTimer
+    if f then f:SetScript("OnUpdate", nil) f.text:SetText(text) end
 end
