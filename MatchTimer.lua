@@ -112,8 +112,9 @@ end
 -- The game's scoreboard used to end with "Time Elapsed"; this client's does
 -- not. We put it back as one more tab hanging from the bottom edge, at the
 -- right-hand end, on the scoreboard and on the results window at the end of
--- a match. It reads in whole minutes, as the game's did, with a tooltip to
--- the second under the mouse. It is our own frame hung on theirs: nothing of
+-- a match. It reads in whole minutes, as the game's did, and to the second
+-- while the mouse is over it, without changing size. It is our own frame
+-- hung on theirs: nothing of
 -- the game's is changed, and clicking it does nothing.
 local BOARDS = { "PVPMatchScoreboard", "PVPMatchResults" }
 local LABEL = type(TIME_ELAPSED) == "string" and TIME_ELAPSED or "Time Elapsed:"
@@ -211,7 +212,8 @@ local function AttachToBoards()
             body:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8, 2)
             body:Hide()
             local text = body:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-            text:SetPoint("CENTER", body, "CENTER", 0, 2)
+            -- From the left, so the words stay put when the number changes.
+            text:SetPoint("LEFT", body, "LEFT", PAD, 2)
 
             -- Its own tab says where to sit; any board's tab will do for the looks.
             local tab = BoardTab(board)
@@ -230,30 +232,22 @@ local function AttachToBoards()
                 plate:SetColorTexture(0, 0, 0, 0.7)
             end
 
-            -- Whole minutes on the tab; under the mouse, a tooltip to the
-            -- second, in the manner of the callout bar's.
-            local shown, hover, tipped
-            local function Tip()
-                if not (hover and shown) then return end
-                local value = Text(shown)
-                if value == tipped then return end
-                tipped = value
-                GameTooltip:SetOwner(body, "ANCHOR_TOP")
-                GameTooltip:SetText(LABEL .. " " .. value, 1, 1, 1)
-                GameTooltip:Show()
-            end
+            -- Whole minutes, or minutes and seconds under the mouse. The tab
+            -- is sized once, for two digits of minutes, and only ever grows.
+            local shown, hover, widest
             local function Write()
                 if not shown then return end
-                text:SetText(LABEL .. " " .. math.floor(shown / 60) .. " Min")
-                body:SetWidth((text:GetStringWidth() or 120) + PAD * 2)
-                Tip()
+                if not widest then
+                    text:SetText(LABEL .. " 00 Min")
+                    widest = text:GetStringWidth() or 120
+                end
+                text:SetText(LABEL .. " " .. (hover and Text(shown) or (math.floor(shown / 60) .. " Min")))
+                widest = math.max(widest, text:GetStringWidth() or 0)
+                body:SetWidth(widest + PAD * 2)
             end
-            local function Leave()
-                if hover then GameTooltip_Hide() end
-                hover, tipped = false, nil
-            end
+            local function Leave() hover = false Write() end
             body:EnableMouse(true)
-            body:SetScript("OnEnter", function() hover = true Tip() end)
+            body:SetScript("OnEnter", function() hover = true Write() end)
             body:SetScript("OnLeave", Leave)
             body:SetScript("OnHide", Leave)
 

@@ -299,8 +299,8 @@ scenario("queue pop: nothing while queued, a countdown when it pops, sound only 
     sim.printed = {}
 end)
 
--- The time on the scoreboard's Time Elapsed tab: whole minutes on the tab
--- itself, and to the second in the tooltip with the mouse over it.
+-- The time on the scoreboard's Time Elapsed tab: whole minutes as it stands,
+-- or to the second as it reads with the mouse over it.
 local function timeTabs(script)
     for _, name in ipairs({ "WSGForeverPVPMatchScoreboardTime", "WSGForeverPVPMatchResultsTime" }) do
         local tab = _G[name]
@@ -311,13 +311,9 @@ local function minutes()
     local line = sim.showing("Time Elapsed")
     return line and line:match("^Time Elapsed: (.+)$")
 end
-local function tooltip()
-    return sim.tip and sim.tip[1] and sim.tip[1]:match("^Time Elapsed: (.+)$")
-end
 local function clock()
-    sim.tip = nil
     timeTabs("OnEnter")
-    local value = tooltip()
+    local value = minutes()
     timeTabs("OnLeave")
     return value
 end
@@ -412,18 +408,27 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
     sim.run(65.5)
     check(sim.showing("^Time Elapsed: 1 Min$") ~= nil, "scoreboard should read 1 Min, got " .. tostring(sim.showing("Time Elapsed")))
-    -- the mouse over it: a tooltip to the second, which keeps counting and goes when the mouse leaves
+    -- the mouse over it: to the second, still counting, and back to minutes when it leaves; the tab never changes size
+    local tabFrame = WSGForeverPVPMatchScoreboardTime
+    local width = tabFrame:GetWidth()
     timeTabs("OnEnter")
-    check(tooltip() == "1:05", "the tooltip should read 1:05, got " .. tostring(tooltip()))
-    check(minutes() == "1 Min", "the tab itself should stay in minutes, got " .. tostring(minutes()))
+    check(minutes() == "1:05", "under the mouse it should read 1:05, got " .. tostring(minutes()))
+    check(tabFrame:GetWidth() == width, "the tab changed size under the mouse")
     sim.run(1)
-    check(tooltip() == "1:06", "the tooltip should keep counting, got " .. tostring(tooltip()))
+    check(minutes() == "1:06", "under the mouse it should keep counting, got " .. tostring(minutes()))
     timeTabs("OnLeave")
-    check(sim.tip == nil, "the tooltip stayed after the mouse left")
-    -- closing the scoreboard under the mouse takes the tooltip with it
+    check(minutes() == "1 Min", "it should go back to minutes when the mouse leaves, got " .. tostring(minutes()))
+    -- closing the scoreboard under the mouse: back to minutes the next time it opens
     timeTabs("OnEnter")
-    WSGForeverPVPMatchScoreboardTime.scripts.OnHide(WSGForeverPVPMatchScoreboardTime)
-    check(sim.tip == nil, "the tooltip outlived the scoreboard")
+    tabFrame.scripts.OnHide(tabFrame)
+    check(minutes() == "1 Min", "it stayed on seconds after closing under the mouse, got " .. tostring(minutes()))
+    -- ten minutes in, with one more digit: still the same size
+    GK.db.matchStart.at = GK.db.matchStart.at - 600
+    sim.run(1)
+    check(minutes() == "11 Min", "expected 11 Min, got " .. tostring(minutes()))
+    check(tabFrame:GetWidth() == width, "the tab changed size going into double digits")
+    GK.db.matchStart.at = GK.db.matchStart.at + 600
+    sim.run(1)
     -- loading again, or another event, does not add a second line
     sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
     sim.fire("PLAYER_ENTERING_WORLD")
@@ -439,7 +444,7 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     PVPMatchResults:Show()
     sim.run(1)
     local ended = clock()
-    check(minutes() == "2 Min" and ended ~= nil and ended:find("^2:0[01]$") ~= nil, "results window should show the match length, got " .. tostring(ended))
+    check(minutes() == "2 Min" and ended ~= nil and ended:find("^2:0%d$") ~= nil, "results window should show the match length, got " .. tostring(ended))
     sim.run(40)
     check(clock() == ended, "the time kept running after the match ended")
     -- turned off, the line goes
