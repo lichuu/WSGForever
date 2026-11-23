@@ -20,7 +20,7 @@ Both flag carriers' health beside the score, a countdown when a flag is dropped,
 ### Time Elapsed on the scoreboard
 ![The scoreboard with a Time Elapsed tab at its bottom-right corner](media/gallery/scoreboard-time.jpg)
 
-The scoreboard gets its Time Elapsed back, as one more tab at the bottom right that matches the game's own. It counts from the moment the gates open, reads to the second while your mouse is over it, and stops when the match ends.
+The scoreboard gets its Time Elapsed back, as one more tab at the bottom right that matches the game's own. It counts from the moment the gates open, shows the seconds in a tooltip when you hover over it, and stops when the match ends.
 
 ### Enemy frames
 ![The enemy team list](media/gallery/enemy-frames.jpg)

@@ -110,7 +110,7 @@ end
 UIParent = CreateFrame("Frame", "UIParent")
 Minimap = CreateFrame("Frame", "Minimap")
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip")
-function GameTooltip_Hide() end
+function GameTooltip_Hide() sim.tip = nil end
 -- What the tooltip currently says, one string per line, in sim.tip.
 sim.tip = {}
 function GameTooltip:SetText(text) sim.tip = { text } end

@@ -112,8 +112,8 @@ end
 -- The game's scoreboard used to end with "Time Elapsed"; this client's does
 -- not. We put it back as one more tab hanging from the bottom edge, at the
 -- right-hand end, on the scoreboard and on the results window at the end of
--- a match. It reads in whole minutes, as the game's did, and to the second
--- while the mouse is over it. It is our own frame hung on theirs: nothing of
+-- a match. It reads in whole minutes, as the game's did, with a tooltip to
+-- the second under the mouse. It is our own frame hung on theirs: nothing of
 -- the game's is changed, and clicking it does nothing.
 local BOARDS = { "PVPMatchScoreboard", "PVPMatchResults" }
 local LABEL = type(TIME_ELAPSED) == "string" and TIME_ELAPSED or "Time Elapsed:"
@@ -230,17 +230,32 @@ local function AttachToBoards()
                 plate:SetColorTexture(0, 0, 0, 0.7)
             end
 
-            -- Whole minutes, or minutes and seconds under the mouse.
-            local shown, hover
+            -- Whole minutes on the tab; under the mouse, a tooltip to the
+            -- second, in the manner of the callout bar's.
+            local shown, hover, tipped
+            local function Tip()
+                if not (hover and shown) then return end
+                local value = Text(shown)
+                if value == tipped then return end
+                tipped = value
+                GameTooltip:SetOwner(body, "ANCHOR_TOP")
+                GameTooltip:SetText(LABEL .. " " .. value, 1, 1, 1)
+                GameTooltip:Show()
+            end
             local function Write()
                 if not shown then return end
-                local value = hover and Text(shown) or (math.floor(shown / 60) .. " Min")
-                text:SetText(LABEL .. " |cffffffff" .. value .. "|r")
+                text:SetText(LABEL .. " |cffffffff" .. math.floor(shown / 60) .. " Min|r")
                 body:SetWidth((text:GetStringWidth() or 120) + PAD * 2)
+                Tip()
+            end
+            local function Leave()
+                if hover then GameTooltip_Hide() end
+                hover, tipped = false, nil
             end
             body:EnableMouse(true)
-            body:SetScript("OnEnter", function() hover = true Write() end)
-            body:SetScript("OnLeave", function() hover = false Write() end)
+            body:SetScript("OnEnter", function() hover = true Tip() end)
+            body:SetScript("OnLeave", Leave)
+            body:SetScript("OnHide", Leave)
 
             local tick, placedAt = 1, nil
             holder:SetScript("OnUpdate", GK.Safe("Scoreboard time", function(_, dt)

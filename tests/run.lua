@@ -299,21 +299,25 @@ scenario("queue pop: nothing while queued, a countdown when it pops, sound only 
     sim.printed = {}
 end)
 
--- The time on the scoreboard's Time Elapsed tab: whole minutes as it stands,
--- or to the second as it reads with the mouse over it.
+-- The time on the scoreboard's Time Elapsed tab: whole minutes on the tab
+-- itself, and to the second in the tooltip with the mouse over it.
 local function timeTabs(script)
     for _, name in ipairs({ "WSGForeverPVPMatchScoreboardTime", "WSGForeverPVPMatchResultsTime" }) do
         local tab = _G[name]
-        if tab and tab.scripts[script] then tab.scripts[script](tab) end
+        if tab and tab:IsVisible() and tab.scripts[script] then tab.scripts[script](tab) end
     end
 end
 local function minutes()
     local line = sim.showing("Time Elapsed")
     return line and line:match("|cffffffff(.-)|r")
 end
+local function tooltip()
+    return sim.tip and sim.tip[1] and sim.tip[1]:match("^Time Elapsed: (.+)$")
+end
 local function clock()
+    sim.tip = nil
     timeTabs("OnEnter")
-    local value = minutes()
+    local value = tooltip()
     timeTabs("OnLeave")
     return value
 end
@@ -408,13 +412,18 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
     sim.run(65.5)
     check(sim.showing("^Time Elapsed: |cffffffff1 Min|r$") ~= nil, "scoreboard should read 1 Min, got " .. tostring(sim.showing("Time Elapsed")))
-    -- the mouse over it: to the second, and back to minutes when it leaves
+    -- the mouse over it: a tooltip to the second, which keeps counting and goes when the mouse leaves
     timeTabs("OnEnter")
-    check(sim.showing("^Time Elapsed: |cffffffff1:05|r$") ~= nil, "under the mouse it should read 1:05, got " .. tostring(sim.showing("Time Elapsed")))
+    check(tooltip() == "1:05", "the tooltip should read 1:05, got " .. tostring(tooltip()))
+    check(minutes() == "1 Min", "the tab itself should stay in minutes, got " .. tostring(minutes()))
     sim.run(1)
-    check(minutes() == "1:06", "under the mouse it should keep counting, got " .. tostring(minutes()))
+    check(tooltip() == "1:06", "the tooltip should keep counting, got " .. tostring(tooltip()))
     timeTabs("OnLeave")
-    check(minutes() == "1 Min", "it should go back to minutes when the mouse leaves, got " .. tostring(minutes()))
+    check(sim.tip == nil, "the tooltip stayed after the mouse left")
+    -- closing the scoreboard under the mouse takes the tooltip with it
+    timeTabs("OnEnter")
+    WSGForeverPVPMatchScoreboardTime.scripts.OnHide(WSGForeverPVPMatchScoreboardTime)
+    check(sim.tip == nil, "the tooltip outlived the scoreboard")
     -- loading again, or another event, does not add a second line
     sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
     sim.fire("PLAYER_ENTERING_WORLD")
