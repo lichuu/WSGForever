@@ -43,7 +43,7 @@ WINPY_WIN = "Z:" + bot.WINPY.replace("/", "\\")  # the same folder as Windows se
 # each side (left, top, right, bottom). Captions are in the helper addon.
 SHOTS = {
     "enemy-frames": dict(run=["/run WSGForever.SetEnemyStyle('flat')"], crop=["WSGForeverEnemies"], pad=(420, 40, 40, 40)),
-    "timers": dict(run=[], crop=["WSGForeverFlagSpawn", "WSGForeverEFCLow", "WSGForeverMatchTimer", "WSGForeverRezTimer"],
+    "timers": dict(run=[], crop=["WSGForeverFlagSpawn", "WSGForeverEFCLow", "WSGForeverRezTimer"],
                    pad=(440, 60, 80, 40)),
     "callout-bar": dict(run=["/run WSGForever.modules.Callouts.abFrame:Hide()"], crop=["WSGForeverCallouts"], pad=(40, 110, 40, 30)),
     "ab-callouts": dict(run=["/run local c=WSGForever.modules.Callouts c.frame:Hide() c.abFrame:Show()"],

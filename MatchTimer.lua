@@ -1,13 +1,11 @@
 local _, GK = ...
 
--- A small clock for how long the current battleground has been running,
--- counted from the gates opening, just left of the score at the top of the
--- screen, and as a "Time Elapsed" line on the game's scoreboard.
+-- How long the current battleground has been running, counted from the
+-- gates opening, as a "Time Elapsed" line on the game's scoreboard.
 
 local Timer = {}
 GK.RegisterModule("MatchTimer", Timer)
 
-local KEY = "Match timer"
 local frame, enteredAt
 
 -- The game's own count for this battleground, in seconds. It starts when
@@ -140,28 +138,11 @@ local function AttachToBoards()
     end
 end
 
--- Until it has been dragged somewhere, it sits just left of the score.
-local function Place()
-    if GK.db.positions[KEY] then return end
-    local score = _G.UIWidgetTopCenterContainerFrame
-    if score and score:IsShown() then
-        frame:ClearAllPoints()
-        frame:SetPoint("RIGHT", score, "LEFT", -10, 0)
-    end
-end
-
 function Timer:Init()
-    frame = CreateFrame("Frame", "WSGForeverMatchTimer", UIParent)
-    frame:SetSize(64, 20)
-    frame:SetFrameStrata("LOW")
-    frame.text = frame:CreateFontString(nil, "OVERLAY")
-    frame.text:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
-    frame.text:SetPoint("RIGHT")
-    frame.text:SetTextColor(1, 1, 1)
-    GK.MakeMovable(frame, KEY, { "TOP", "TOP", -150, -22 })
+    -- Nothing to see here: this frame only listens and keeps time.
+    frame = CreateFrame("Frame")
 
     frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    frame:RegisterEvent("UPDATE_UI_WIDGET")
     frame:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
     pcall(frame.RegisterEvent, frame, "START_TIMER") -- the game's own "battle begins in" countdown
     pcall(frame.RegisterEvent, frame, "PVP_MATCH_ACTIVE") -- the match itself has started
@@ -189,9 +170,7 @@ function Timer:Init()
                 local lower = msg:lower()
                 if lower:find("begun") or lower:find("begin!") then GatesOpened() end
             end
-            return
         end
-        Place()
     end))
     local tick = 0
     frame:SetScript("OnUpdate", GK.Safe("Match timer", function(_, dt)
@@ -199,9 +178,7 @@ function Timer:Init()
         if tick < 0.25 then return end
         tick = 0
         WatchPreparation()
-        local seconds = Current()
-        -- A sample outside a battleground, so it can be placed.
-        frame.text:SetText(seconds and Text(seconds) or "12:34")
+        Current() -- notices the match ending even with the scoreboard closed
     end))
 end
 
@@ -210,6 +187,4 @@ function Timer:Refresh()
     AttachToBoards()
     local inBG = GK.InBattleground()
     if not inBG then enteredAt = nil elseif not enteredAt then enteredAt = GetTime() end
-    frame:SetShown(GK.db.matchTimer and (inBG or GK.ShouldShowAll()) and true or false)
-    Place()
 end

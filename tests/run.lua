@@ -299,36 +299,44 @@ scenario("queue pop: nothing while queued, a countdown when it pops, sound only 
     sim.printed = {}
 end)
 
-scenario("the match timer counts from the gates opening", function()
+-- The time on the scoreboard's Time Elapsed line.
+local function clock()
+    local line = sim.showing("Time Elapsed")
+    return line and line:match("|cffffffff(.-)|r")
+end
+
+scenario("the match time counts from the gates opening", function()
     GK.db.gateWait = nil
+    PVPMatchScoreboard = CreateFrame("Frame", "PVPMatchScoreboard")
+    sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
     newMatch()
     sim.runTimeMs = 30000 -- half a minute in, still behind the gates
     sim.run(1)
-    check(sim.showing("^0:00$") ~= nil, "timer should read 0:00 behind the gates")
+    check(clock() == "0:00", "timer should read 0:00 behind the gates")
     sim.runTimeMs = 120000
     say("Let the battle for Warsong Gulch begin!")
     sim.runTimeMs = 600000 -- whatever the game's own count says from here on
     sim.run(65.5)
-    check(sim.showing("^1:05$") ~= nil, "timer should count from the gates opening")
+    check(clock() == "1:05", "timer should count from the gates opening")
     -- a reload mid-match keeps the start
     sim.fire("PLAYER_ENTERING_WORLD")
     sim.run(1)
-    check(sim.showing("^1:06$") ~= nil, "timer lost its start on a reload")
+    check(clock() == "1:06", "timer lost its start on a reload")
     -- joining a match already under way: the game's count less the measured wait
     newMatch()
     sim.runTimeMs = 420000
     sim.run(1)
-    check(sim.showing("^5:00$") ~= nil, "a late join should take the gate wait off the game's count")
+    check(clock() == "5:00", "a late join should take the gate wait off the game's count")
     -- the game's own countdown also sets the start, ahead of time; the chat line then changes nothing
     newMatch()
     sim.runTimeMs = 90000
     sim.fire("START_TIMER", 1, 30, 120)
     sim.run(10)
-    check(sim.showing("^0:00$") ~= nil, "timer should wait out the game's countdown")
+    check(clock() == "0:00", "timer should wait out the game's countdown")
     sim.run(20)
     say("Let the battle for Warsong Gulch begin!")
     sim.run(40.5)
-    check(sim.showing("^0:40$") ~= nil, "timer should start when the game's countdown ends, got " .. tostring(sim.showing("^%d+:%d%d$")))
+    check(clock() == "0:40", "timer should start when the game's countdown ends, got " .. tostring(clock()))
     newMatch()
     sim.runTimeMs = 420000
     -- the Preparation buff coming off is a start signal too
@@ -337,10 +345,10 @@ scenario("the match timer counts from the gates opening", function()
     C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return sim.preparing and id == 44521 and { spellId = id } or nil end }
     sim.preparing = true
     sim.run(5)
-    check(sim.showing("^0:00$") ~= nil, "timer should read 0:00 while Preparation is up")
+    check(clock() == "0:00", "timer should read 0:00 while Preparation is up")
     sim.preparing = false
     sim.run(20.5)
-    check(sim.showing("^0:20$") ~= nil, "timer should start when Preparation comes off, got " .. tostring(sim.showing("^%d+:%d%d$")))
+    check(clock() == "0:20", "timer should start when Preparation comes off, got " .. tostring(clock()))
     C_UnitAuras = nil
     newMatch()
     sim.runTimeMs = 420000
@@ -349,27 +357,25 @@ scenario("the match timer counts from the gates opening", function()
     C_PvP.GetActiveMatchDuration = function() return sim.matchSeconds end
     sim.matchState, sim.matchSeconds = 2, 0
     sim.run(1)
-    check(sim.showing("^0:00$") ~= nil, "timer should read 0:00 while the game says the match is waiting to start")
+    check(clock() == "0:00", "timer should read 0:00 while the game says the match is waiting to start")
     sim.matchState, sim.matchSeconds = 3, 95
     sim.run(1)
-    check(sim.showing("^1:35$") ~= nil, "timer should show the game's own match duration")
+    check(clock() == "1:35", "timer should show the game's own match duration")
     sim.matchSeconds = sim.SECRET -- hidden from addons: fall back to our own signals
     sim.run(1)
-    check(sim.showing("^5:00$") ~= nil, "a hidden duration should fall back, got " .. tostring(sim.showing("^%d+:%d%d$")))
+    check(clock() == "5:00", "a hidden duration should fall back, got " .. tostring(clock()))
     C_PvP.GetActiveMatchState, C_PvP.GetActiveMatchDuration = nil, nil
     -- a long match shows hours
     sim.runTimeMs = 3845000
     sim.run(1)
-    check(sim.showing("^1:02:05$") ~= nil, "timer should show hours past sixty minutes")
+    check(clock() == "1:02:05", "timer should show hours past sixty minutes")
     -- no count from the game at all: time since zoning in
     sim.runTimeMs = nil
     newMatch()
     sim.run(65.5)
-    check(sim.showing("^1:05$") ~= nil, "without the game's count it should time from zoning in")
-    SlashCmdList.WSGFOREVER("timer")
-    check(not WSGForeverMatchTimer:IsShown(), "timer did not turn off")
-    SlashCmdList.WSGFOREVER("timer")
-    check(WSGForeverMatchTimer:IsShown(), "timer did not turn back on")
+    check(clock() == "1:05", "without the game's count it should time from zoning in")
+    PVPMatchScoreboard:Hide()
+    PVPMatchScoreboard = nil
     GK.db.gateWait = nil
     sim.printed = {}
 end)
@@ -398,7 +404,7 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     -- closed: nothing on screen
     PVPMatchScoreboard:Hide()
     check(sim.showing("Time Elapsed") == nil, "the line outlived the scoreboard")
-    -- the match ends and the results window opens: the time stands still, there and beside the score
+    -- the match ends and the results window opens: the time stands still
     sim.run(55)
     sim.winner = 1
     PVPMatchResults:Show()
@@ -407,14 +413,13 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     check(ended ~= nil and ended:find("2:0[01]") ~= nil, "results window should show the match length, got " .. tostring(ended))
     sim.run(40)
     check(sim.showing("Time Elapsed") == ended, "the time kept running after the match ended")
-    check(sim.showing("^2:0[01]$") ~= nil, "the clock beside the score kept running after the match ended")
-    -- with the match timer off the line goes too
+    -- turned off, the line goes
     SlashCmdList.WSGFOREVER("timer")
     sim.run(1)
-    check(sim.showing("Time Elapsed") == nil, "the line stayed with the match timer off")
+    check(sim.showing("Time Elapsed") == nil, "the line stayed after being turned off")
     SlashCmdList.WSGFOREVER("timer")
     sim.run(1)
-    check(sim.showing("Time Elapsed") == ended, "the line did not come back with the match timer")
+    check(sim.showing("Time Elapsed") == ended, "the line did not come back when turned on again")
     -- the next match starts from nothing
     sim.winner = nil
     newMatch()

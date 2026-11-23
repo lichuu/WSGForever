@@ -10,7 +10,7 @@
 -- most 255 characters, so the driver only sends short calls.
 
 -- The frames shoot.py crops around.
-local FRAMES = { "WSGForeverEnemies", "WSGForeverCallouts", "WSGForeverABCallouts", "WSGForeverMatchTimer",
+local FRAMES = { "WSGForeverEnemies", "WSGForeverCallouts", "WSGForeverABCallouts",
     "WSGForeverQueue", "WSGForeverOptions", "WSGForeverFlagSpawn", "WSGForeverEFCLow",
     "WSGForeverRezTimer", "UIWidgetTopCenterContainerFrame", "BattlefieldMapFrame" }
 
@@ -18,8 +18,8 @@ local FRAMES = { "WSGForeverEnemies", "WSGForeverCallouts", "WSGForeverABCallout
 local CAPTIONS = {
     ["enemy-frames"] = { { "WSGForeverEnemies", "TOPRIGHT", "TOPLEFT", -14, -30, "Enemy frames",
         "Class, health, range and who is dead. Left click targets, right click focuses, middle click pings." } },
-    ["timers"] = { { "WSGForeverFlagSpawn", "RIGHT", "LEFT", -60, 10, "Flag, match and rez timers",
-        "A countdown when a flag is dropped and when the flags spawn again, how long the match has run, and when the next graveyard wave lands. A red banner when the enemy carrier is low." } },
+    ["timers"] = { { "WSGForeverFlagSpawn", "RIGHT", "LEFT", -60, 10, "Flag and rez timers",
+        "A countdown when a flag is dropped and when the flags spawn again, and when the next graveyard wave lands. A red banner when the enemy carrier is low." } },
     ["callout-bar"] = { { "WSGForeverCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Callout bar",
         "One click tells your team where the enemy flag carrier is." } },
     ["ab-callouts"] = { { "WSGForeverABCallouts", "BOTTOMRIGHT", "TOPRIGHT", 0, 10, "Arathi Basin callouts",

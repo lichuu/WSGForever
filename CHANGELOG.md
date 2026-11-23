@@ -1,8 +1,8 @@
 # WSGForever
 
 ## Unreleased
-- Time Elapsed is back on the scoreboard: the match time shows under the bottom-right corner of the game's scoreboard, and on the results window at the end of a match. It follows the Match timer setting.
-- The match timer stops when the match ends, so it reads how long the match took.
+- Time Elapsed is back on the scoreboard: the match time, counted from the gates opening, shows under the bottom-right corner of the game's scoreboard and on the results window at the end of a match. It stops when the match ends, so it reads how long the match took.
+- The small match clock beside the score is gone, now that the time is on the scoreboard. The setting is called Scoreboard time; `/fc timer` still turns it on and off.
 
 ## 0.8.2
 - Queue pop countdown: when a battleground queue pops, a line showing how long is left to enter, red for the last five seconds, just under the game's own "ready" window. Nothing shows while you are only queued. An optional ding on the pop (off by default) is heard even with sound effects muted.
