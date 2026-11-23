@@ -112,8 +112,9 @@ end
 -- The game's scoreboard used to end with "Time Elapsed"; this client's does
 -- not. We put it back as one more tab hanging from the bottom edge, at the
 -- right-hand end, on the scoreboard and on the results window at the end of
--- a match. It is our own frame hung on theirs: nothing of the game's is
--- changed, and it cannot be clicked.
+-- a match. It reads in whole minutes, as the game's did, and to the second
+-- while the mouse is over it. It is our own frame hung on theirs: nothing of
+-- the game's is changed, and clicking it does nothing.
 local BOARDS = { "PVPMatchScoreboard", "PVPMatchResults" }
 local LABEL = type(TIME_ELAPSED) == "string" and TIME_ELAPSED or "Time Elapsed:"
 local PAD = 16 -- space either side of the words
@@ -205,7 +206,7 @@ local function AttachToBoards()
             boardLines[board] = holder
             holder:SetSize(1, 1)
             holder:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8, 0)
-            local body = CreateFrame("Frame", nil, holder)
+            local body = CreateFrame("Frame", "WSGForever" .. name .. "Time", holder)
             body:SetSize(180, 32)
             body:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8, 2)
             body:Hide()
@@ -229,6 +230,18 @@ local function AttachToBoards()
                 plate:SetColorTexture(0, 0, 0, 0.7)
             end
 
+            -- Whole minutes, or minutes and seconds under the mouse.
+            local shown, hover
+            local function Write()
+                if not shown then return end
+                local value = hover and Text(shown) or (math.floor(shown / 60) .. " Min")
+                text:SetText(LABEL .. " |cffffffff" .. value .. "|r")
+                body:SetWidth((text:GetStringWidth() or 120) + PAD * 2)
+            end
+            body:EnableMouse(true)
+            body:SetScript("OnEnter", function() hover = true Write() end)
+            body:SetScript("OnLeave", function() hover = false Write() end)
+
             local tick, placedAt = 1, nil
             holder:SetScript("OnUpdate", GK.Safe("Scoreboard time", function(_, dt)
                 tick = tick + dt
@@ -236,9 +249,9 @@ local function AttachToBoards()
                 tick = 0
                 -- In a match its time; with the frames unlocked or in test
                 -- mode, a sample to look at.
-                local seconds = GK.db.matchTimer and (Current() or (GK.ShouldShowAll() and 754))
-                if not seconds then body:Hide() return end
-                text:SetText(LABEL .. " |cffffffff" .. Text(seconds) .. "|r")
+                shown = GK.db.matchTimer and (Current() or (GK.ShouldShowAll() and 754)) or nil
+                if not shown then body:Hide() return end
+                Write()
                 -- Level with the real tabs, once they have been laid out.
                 local ok, drop, tall, scale = pcall(TabPlacement, board, tab)
                 if ok and drop and placedAt ~= drop then
@@ -248,7 +261,6 @@ local function AttachToBoards()
                     body:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8 / scale, drop / scale)
                     body:SetHeight(tall)
                 end
-                body:SetWidth((text:GetStringWidth() or 120) + PAD * 2)
                 body:Show()
             end))
         end

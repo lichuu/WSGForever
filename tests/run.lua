@@ -299,10 +299,23 @@ scenario("queue pop: nothing while queued, a countdown when it pops, sound only 
     sim.printed = {}
 end)
 
--- The time on the scoreboard's Time Elapsed line.
-local function clock()
+-- The time on the scoreboard's Time Elapsed tab: whole minutes as it stands,
+-- or to the second as it reads with the mouse over it.
+local function timeTabs(script)
+    for _, name in ipairs({ "WSGForeverPVPMatchScoreboardTime", "WSGForeverPVPMatchResultsTime" }) do
+        local tab = _G[name]
+        if tab and tab.scripts[script] then tab.scripts[script](tab) end
+    end
+end
+local function minutes()
     local line = sim.showing("Time Elapsed")
     return line and line:match("|cffffffff(.-)|r")
+end
+local function clock()
+    timeTabs("OnEnter")
+    local value = minutes()
+    timeTabs("OnLeave")
+    return value
 end
 
 scenario("the match time counts from the gates opening", function()
@@ -394,7 +407,14 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     PVPMatchResults:Hide()
     sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
     sim.run(65.5)
-    check(sim.showing("^Time Elapsed: |cffffffff1:05|r$") ~= nil, "scoreboard should read 1:05, got " .. tostring(sim.showing("Time Elapsed")))
+    check(sim.showing("^Time Elapsed: |cffffffff1 Min|r$") ~= nil, "scoreboard should read 1 Min, got " .. tostring(sim.showing("Time Elapsed")))
+    -- the mouse over it: to the second, and back to minutes when it leaves
+    timeTabs("OnEnter")
+    check(sim.showing("^Time Elapsed: |cffffffff1:05|r$") ~= nil, "under the mouse it should read 1:05, got " .. tostring(sim.showing("Time Elapsed")))
+    sim.run(1)
+    check(minutes() == "1:06", "under the mouse it should keep counting, got " .. tostring(minutes()))
+    timeTabs("OnLeave")
+    check(minutes() == "1 Min", "it should go back to minutes when the mouse leaves, got " .. tostring(minutes()))
     -- loading again, or another event, does not add a second line
     sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
     sim.fire("PLAYER_ENTERING_WORLD")
@@ -405,26 +425,26 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     PVPMatchScoreboard:Hide()
     check(sim.showing("Time Elapsed") == nil, "the line outlived the scoreboard")
     -- the match ends and the results window opens: the time stands still
-    sim.run(55)
+    sim.run(54)
     sim.winner = 1
     PVPMatchResults:Show()
     sim.run(1)
-    local ended = sim.showing("Time Elapsed")
-    check(ended ~= nil and ended:find("2:0[01]") ~= nil, "results window should show the match length, got " .. tostring(ended))
+    local ended = clock()
+    check(minutes() == "2 Min" and ended ~= nil and ended:find("^2:0[01]$") ~= nil, "results window should show the match length, got " .. tostring(ended))
     sim.run(40)
-    check(sim.showing("Time Elapsed") == ended, "the time kept running after the match ended")
+    check(clock() == ended, "the time kept running after the match ended")
     -- turned off, the line goes
     SlashCmdList.WSGFOREVER("timer")
     sim.run(1)
     check(sim.showing("Time Elapsed") == nil, "the line stayed after being turned off")
     SlashCmdList.WSGFOREVER("timer")
     sim.run(1)
-    check(sim.showing("Time Elapsed") == ended, "the line did not come back when turned on again")
+    check(clock() == ended, "the line did not come back when turned on again")
     -- the next match starts from nothing
     sim.winner = nil
     newMatch()
     sim.run(1)
-    check(sim.showing("^Time Elapsed: |cffffffff0:0%d|r$") ~= nil, "a new match should start its own count, got " .. tostring(sim.showing("Time Elapsed")))
+    check(minutes() == "0 Min" and (clock() or ""):find("^0:0%d$") ~= nil, "a new match should start its own count, got " .. tostring(clock()))
     PVPMatchResults:Hide()
     PVPMatchScoreboard, PVPMatchResults = nil, nil
     wipe(GK.db.matches)
