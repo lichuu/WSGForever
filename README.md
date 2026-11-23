@@ -15,7 +15,12 @@ Get it on [CurseForge](https://www.curseforge.com/wow/addons/wsgforever) or from
 ### Flag carriers and timers
 ![Drop countdown, rez timer, flag spawn timer and the enemy carrier low banner](media/gallery/timers.jpg)
 
-Both flag carriers' health beside the score, a countdown when a flag is dropped, and one when the flags spawn again after a capture. A red banner warns when the enemy carrier is under half health. The scoreboard gets its Time Elapsed line back, counted from the moment the gates open, and the rez timer counts down to the next graveyard wave with how many enemies are waiting to come back.
+Both flag carriers' health beside the score, a countdown when a flag is dropped, and one when the flags spawn again after a capture. A red banner warns when the enemy carrier is under half health. The rez timer counts down to the next graveyard wave with how many enemies are waiting to come back.
+
+### Time Elapsed on the scoreboard
+![The scoreboard with a Time Elapsed tab at its bottom-right corner](media/gallery/scoreboard-time.jpg)
+
+The scoreboard gets its Time Elapsed back, as one more tab at the bottom right that matches the game's own. It counts from the moment the gates open, reads to the second while your mouse is over it, and stops when the match ends.
 
 ### Enemy frames
 ![The enemy team list](media/gallery/enemy-frames.jpg)
