@@ -244,7 +244,7 @@ local function AttachToBoards()
             end
             local function Write()
                 if not shown then return end
-                text:SetText(LABEL .. " |cffffffff" .. math.floor(shown / 60) .. " Min|r")
+                text:SetText(LABEL .. " " .. math.floor(shown / 60) .. " Min")
                 body:SetWidth((text:GetStringWidth() or 120) + PAD * 2)
                 Tip()
             end

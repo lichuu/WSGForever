@@ -309,7 +309,7 @@ local function timeTabs(script)
 end
 local function minutes()
     local line = sim.showing("Time Elapsed")
-    return line and line:match("|cffffffff(.-)|r")
+    return line and line:match("^Time Elapsed: (.+)$")
 end
 local function tooltip()
     return sim.tip and sim.tip[1] and sim.tip[1]:match("^Time Elapsed: (.+)$")
@@ -411,7 +411,7 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     PVPMatchResults:Hide()
     sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
     sim.run(65.5)
-    check(sim.showing("^Time Elapsed: |cffffffff1 Min|r$") ~= nil, "scoreboard should read 1 Min, got " .. tostring(sim.showing("Time Elapsed")))
+    check(sim.showing("^Time Elapsed: 1 Min$") ~= nil, "scoreboard should read 1 Min, got " .. tostring(sim.showing("Time Elapsed")))
     -- the mouse over it: a tooltip to the second, which keeps counting and goes when the mouse leaves
     timeTabs("OnEnter")
     check(tooltip() == "1:05", "the tooltip should read 1:05, got " .. tostring(tooltip()))
