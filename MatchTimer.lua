@@ -2,7 +2,7 @@ local _, GK = ...
 
 -- A small clock for how long the current battleground has been running,
 -- counted from the gates opening, just left of the score at the top of the
--- screen.
+-- screen, and as a "Time Elapsed" line on the game's scoreboard.
 
 local Timer = {}
 GK.RegisterModule("MatchTimer", Timer)
@@ -100,6 +100,46 @@ local function Text(seconds)
     return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60)
 end
 
+-- Once there is a winner the clock stops, so the scoreboard you are left
+-- looking at shows how long the match took, not how long you have stood there.
+local final
+local function Current()
+    if not GK.InBattleground() then final = nil return nil end
+    local winner = GetBattlefieldWinner and GK.Plain(GetBattlefieldWinner())
+    if winner == nil then final = nil return Elapsed() end
+    final = final or Elapsed()
+    return final
+end
+
+-- The game's scoreboard used to end with "Time Elapsed"; this client's does
+-- not. We put it back under the bottom-right corner, level with the team
+-- tabs, on the scoreboard and on the results window at the end of a match.
+-- The line is our own frame hung on theirs: nothing of the game's is changed.
+local BOARDS = { "PVPMatchScoreboard", "PVPMatchResults" }
+local LABEL = type(TIME_ELAPSED) == "string" and TIME_ELAPSED or "Time Elapsed:"
+local boardLines = {}
+local function AttachToBoards()
+    for _, name in ipairs(BOARDS) do
+        local board = _G[name]
+        if type(board) == "table" and board.GetObjectType and not boardLines[board] then
+            local holder = CreateFrame("Frame", nil, board)
+            boardLines[board] = holder
+            holder:SetSize(220, 20)
+            holder:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8, -7)
+            local text = holder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            text:SetPoint("RIGHT")
+            local tick = 1
+            holder:SetScript("OnUpdate", GK.Safe("Scoreboard time", function(_, dt)
+                tick = tick + dt
+                if tick < 0.25 then return end
+                tick = 0
+                local seconds = GK.db.matchTimer and Current()
+                text:SetText(seconds and (LABEL .. " |cffffffff" .. Text(seconds) .. "|r") or "")
+            end))
+        end
+    end
+end
+
 -- Until it has been dragged somewhere, it sits just left of the score.
 local function Place()
     if GK.db.positions[KEY] then return end
@@ -125,7 +165,10 @@ function Timer:Init()
     frame:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
     pcall(frame.RegisterEvent, frame, "START_TIMER") -- the game's own "battle begins in" countdown
     pcall(frame.RegisterEvent, frame, "PVP_MATCH_ACTIVE") -- the match itself has started
+    frame:RegisterEvent("ADDON_LOADED") -- the scoreboard is loaded when first needed
     frame:SetScript("OnEvent", GK.Safe("Match timer event", function(_, event, msg, seconds)
+        AttachToBoards()
+        if event == "ADDON_LOADED" then return end
         if event == "PLAYER_ENTERING_WORLD" then
             enteredAt = GK.InBattleground() and (enteredAt or GetTime()) or nil
             -- Out of the battleground: the next match starts its own clock.
@@ -156,7 +199,7 @@ function Timer:Init()
         if tick < 0.25 then return end
         tick = 0
         WatchPreparation()
-        local seconds = GK.InBattleground() and Elapsed()
+        local seconds = Current()
         -- A sample outside a battleground, so it can be placed.
         frame.text:SetText(seconds and Text(seconds) or "12:34")
     end))
@@ -164,6 +207,7 @@ end
 
 function Timer:Refresh()
     if not frame then return end
+    AttachToBoards()
     local inBG = GK.InBattleground()
     if not inBG then enteredAt = nil elseif not enteredAt then enteredAt = GetTime() end
     frame:SetShown(GK.db.matchTimer and (inBG or GK.ShouldShowAll()) and true or false)

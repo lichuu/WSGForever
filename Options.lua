@@ -34,7 +34,7 @@ local SECTIONS = {
         { "enemyNames", "Enemy names", "Names on the enemy frames.",
             "Shows each enemy's name on their row. Turn it off for bars and class icons only." },
         { "matchTimer", "Match timer", "How long the battleground has run.",
-            "A small clock beside the score showing how long the battleground has been running. Works in every battleground." },
+            "A small clock beside the score showing how long the battleground has been running, and a Time Elapsed line on the scoreboard. Works in every battleground." },
         { "queueAlert", "Queue pop countdown", "How long is left to enter when it pops.",
             "When a battleground queue pops, a countdown of how long is left to enter, red for the last five seconds. Nothing shows while you are only queued." },
         { "queueSound", "Queue pop sound", "A ding when it pops, even with sound muted.",

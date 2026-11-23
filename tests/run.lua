@@ -374,6 +374,59 @@ scenario("the match timer counts from the gates opening", function()
     sim.printed = {}
 end)
 
+scenario("the scoreboard gets its Time Elapsed line back, and it stops when the match ends", function()
+    GK.db.gateWait = nil
+    wipe(GK.db.matches)
+    newMatch()
+    sim.runTimeMs = 120000
+    say("Let the battle for Warsong Gulch begin!")
+    sim.runTimeMs = nil
+    -- the game loads its scoreboard the first time it is opened
+    check(sim.showing("Time Elapsed") == nil, "a Time Elapsed line with no scoreboard")
+    PVPMatchScoreboard = CreateFrame("Frame", "PVPMatchScoreboard")
+    PVPMatchResults = CreateFrame("Frame", "PVPMatchResults")
+    PVPMatchResults:Hide()
+    sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
+    sim.run(65.5)
+    check(sim.showing("^Time Elapsed: |cffffffff1:05|r$") ~= nil, "scoreboard should read 1:05, got " .. tostring(sim.showing("Time Elapsed")))
+    -- loading again, or another event, does not add a second line
+    sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
+    sim.fire("PLAYER_ENTERING_WORLD")
+    local lines = 0
+    for _, t in ipairs(sim.texts()) do if t:find("Time Elapsed") then lines = lines + 1 end end
+    check(lines == 1, "expected one Time Elapsed line, found " .. lines)
+    -- closed: nothing on screen
+    PVPMatchScoreboard:Hide()
+    check(sim.showing("Time Elapsed") == nil, "the line outlived the scoreboard")
+    -- the match ends and the results window opens: the time stands still, there and beside the score
+    sim.run(55)
+    sim.winner = 1
+    PVPMatchResults:Show()
+    sim.run(1)
+    local ended = sim.showing("Time Elapsed")
+    check(ended ~= nil and ended:find("2:0[01]") ~= nil, "results window should show the match length, got " .. tostring(ended))
+    sim.run(40)
+    check(sim.showing("Time Elapsed") == ended, "the time kept running after the match ended")
+    check(sim.showing("^2:0[01]$") ~= nil, "the clock beside the score kept running after the match ended")
+    -- with the match timer off the line goes too
+    SlashCmdList.WSGFOREVER("timer")
+    sim.run(1)
+    check(sim.showing("Time Elapsed") == nil, "the line stayed with the match timer off")
+    SlashCmdList.WSGFOREVER("timer")
+    sim.run(1)
+    check(sim.showing("Time Elapsed") == ended, "the line did not come back with the match timer")
+    -- the next match starts from nothing
+    sim.winner = nil
+    newMatch()
+    sim.run(1)
+    check(sim.showing("^Time Elapsed: |cffffffff0:0%d|r$") ~= nil, "a new match should start its own count, got " .. tostring(sim.showing("Time Elapsed")))
+    PVPMatchResults:Hide()
+    PVPMatchScoreboard, PVPMatchResults = nil, nil
+    wipe(GK.db.matches)
+    GK.db.gateWait = nil
+    sim.printed = {}
+end)
+
 scenario("the scoreboard's team tabs don't empty the enemy list or cut a team from the history", function()
     wipe(GK.db.matches)
     newMatch()
