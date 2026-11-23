@@ -1,14 +1,8 @@
 <p align="center"><img src="media/banner.jpg" alt="WSGForever: Warsong Gulch tools for WoW Forever"></p>
 
-The Warsong Gulch addon for **World of Warcraft: Forever**. See who carries each flag and how hurt they are, know when the next graveyard wave lands, watch the whole enemy team, and tell your team where the enemy carrier is in one click.
+The Warsong Gulch addon for **World of Warcraft: Forever**. See who carries each flag and how hurt they are, know when the next graveyard wave lands, watch the whole enemy team, and tell your team where the enemy carrier is in one click. Every part can be turned off, moved and resized, and the enemy frames come in eleven styles, including two that follow your ElvUI or EllesmereUI settings.
 
 Get it on [CurseForge](https://www.curseforge.com/wow/addons/wsgforever) or from the [releases page](https://github.com/lichuu/WSGForever/releases).
-
-## Why WSGForever
-- **One addon instead of a pile of WeakAuras.** Callouts, carrier tracking, timers, enemy frames and match history in one place, and they work together.
-- **Built for Forever.** Forever hides some information from addons. Everything here is built around what the game actually allows, and tested in real matches.
-- **Stays out of your way.** Every part can be turned off, moved and resized, with eleven looks for the enemy frames, including ones that follow ElvUI and EllesmereUI.
-- **Free and open source** (MIT).
 
 ## Features
 

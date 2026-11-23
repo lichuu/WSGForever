@@ -21,4 +21,10 @@ A local wrapper that sets them is the easiest way; keep it out of git.
 
 It types into chat with a `/p ` prefix so nothing can go out as a whisper, and it
 reloads the UI, so don't run it in a match. Shots and captions are listed in `SHOTS`.
+The scoreboard's Time Elapsed tab is the exception: it needs players on the board, so
+the helper takes that one by itself. With the helper installed, open the scoreboard in a
+real battleground two minutes or more in; it captions the tab and has the game save its
+own screenshot (in the game's `Screenshots` folder), up to four times. Crop the best one
+into `media/gallery/scoreboard-time.jpg` by hand, then uninstall the helper.
+
 The `tools` folder is left out of the addon download.

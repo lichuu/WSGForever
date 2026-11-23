@@ -6,6 +6,9 @@
 --   WSGFShot.Dump()        saves where the addon's frames are on screen, in
 --                          pixels, to WSGForeverShotsDB (written on /reload)
 --
+-- The scoreboard shot stages itself (see the end of this file): it needs a
+-- real match, and nobody should be typing into one.
+--
 -- Captions live here rather than in shoot.py because a chat line holds at
 -- most 255 characters, so the driver only sends short calls.
 
@@ -26,6 +29,8 @@ local CAPTIONS = {
         "Incoming, big incoming, safe and help for every node, each with its own icon." } },
     ["queue-timers"] = { { "WSGForeverQueue", "RIGHT", "LEFT", -16, 0, "Queue pop",
         "How long is left to enter when a battleground queue pops." } },
+    ["scoreboard-time"] = { { "WSGForeverPVPMatchScoreboardTime", "TOPRIGHT", "TOPLEFT", -12, 0, "Time Elapsed on the scoreboard",
+        "Back where it used to be, counted from the gates opening. Hover for the seconds." } },
 }
 
 WSGFShot = {}
@@ -94,3 +99,81 @@ function WSGFShot.Rez(text)
     local f = WSGForeverRezTimer
     if f then f:SetScript("OnUpdate", nil) f.text:SetText(text) end
 end
+
+-- The scoreboard's Time Elapsed tab ------------------------------------------
+-- It can only be shot in a real match, with players on the board, so this
+-- one needs no typing: whenever the tab is showing in a battleground, two
+-- minutes or more in and while you are alive, it captions the tab, fades the
+-- enemy list beside it, and has the game take its own screenshot (lossless,
+-- in the game's Screenshots folder). It stops after MAX_SHOTS; to arm it
+-- again: /run WSGForeverShotsDB.autoShots = 0
+local MAX_SHOTS, GAP = 4, 45
+local auto = CreateFrame("Frame")
+local tick, stagedAt, shotAt, lastShot, undo = 0, nil, nil, -GAP, nil
+
+local function Minutes(tab)
+    for _, r in ipairs({ tab:GetRegions() }) do
+        local text = r.GetText and r:GetText()
+        local n = type(text) == "string" and text:match("(%d+) Min")
+        if n then return tonumber(n) end
+    end
+end
+
+local function Alive()
+    local ok, dead = pcall(function() return UnitIsDeadOrGhost("player") and true or false end)
+    return ok and not dead
+end
+
+local function Unstage()
+    WSGFShot.Clear()
+    if undo then pcall(undo) end
+    stagedAt, shotAt, undo = nil, nil, nil
+end
+
+local function Step()
+    WSGForeverShotsDB = WSGForeverShotsDB or {}
+    local db = WSGForeverShotsDB
+    local tab = _G.WSGForeverPVPMatchScoreboardTime
+    local _, kind = IsInInstance()
+    local showing = kind == "pvp" and tab and tab:IsVisible()
+    local now = GetTime()
+    if not stagedAt then
+        if showing and (db.autoShots or 0) < MAX_SHOTS and now - lastShot > GAP
+            and (Minutes(tab) or 0) >= 2 and Alive() then
+            local enemies, format, quality = _G.WSGForeverEnemies, GetCVar("screenshotFormat"), GetCVar("screenshotQuality")
+            local alpha = enemies and enemies:GetAlpha()
+            undo = function()
+                if enemies and alpha then enemies:SetAlpha(alpha) end
+                if format then SetCVar("screenshotFormat", format) end
+                if quality then SetCVar("screenshotQuality", quality) end
+            end
+            if enemies then enemies:SetAlpha(0) end
+            WSGFShot.Stage("scoreboard-time")
+            stagedAt = now
+        end
+    elseif not showing then
+        Unstage() -- closed before the shot: nothing taken, nothing counted
+    elseif not shotAt then
+        if now - stagedAt > 0.6 then
+            SetCVar("screenshotFormat", "tga")
+            SetCVar("screenshotQuality", "10")
+            Screenshot()
+            shotAt, lastShot = now, now
+            db.autoShots = (db.autoShots or 0) + 1
+        end
+    elseif now - shotAt > 1.2 then
+        Unstage()
+    end
+end
+
+auto:SetScript("OnUpdate", function(_, dt)
+    tick = tick + dt
+    if tick < 0.1 then return end
+    tick = 0
+    local ok, err = pcall(Step)
+    if not ok then
+        Unstage()
+        auto:SetScript("OnUpdate", nil)
+        print("WSGFShot: scoreboard shot turned itself off: " .. tostring(err))
+    end
+end)
