@@ -432,6 +432,53 @@ scenario("the scoreboard gets its Time Elapsed line back, and it stops when the 
     sim.printed = {}
 end)
 
+scenario("the Time Elapsed tab borrows the looks of the scoreboard's own tabs, or falls back to a plain plate", function()
+    -- A tab built the way the game builds them: three pieces, the middle one pinned between the ends.
+    local function piece(atlas, points)
+        return { GetObjectType = function() return "Texture" end, GetAtlas = function() return atlas end,
+            GetSize = function() return 35, 36 end, GetNumPoints = function() return #points end,
+            GetPoint = function(_, i) return unpack(points[i]) end }
+    end
+    local function board(name, tab)
+        local b = CreateFrame("Frame", name)
+        b.Tab3 = tab
+        return b
+    end
+    local function body(b) return b.children[#b.children].children[1] end
+    local function atlases(b)
+        local found = {}
+        for _, r in ipairs(body(b).regions) do
+            if r.kind == "Texture" and r.shown and r.atlas then found[r.atlas] = r end
+        end
+        return found
+    end
+    newMatch()
+    local tab = CreateFrame("Frame")
+    tab.Left = piece("tab-left", { { "TOPLEFT", tab, "TOPLEFT", -3, 0 } })
+    tab.Right = piece("tab-right", { { "TOPRIGHT", tab, "TOPRIGHT", 7, 0 } })
+    tab.Middle = piece("tab-center", { { "TOPLEFT", tab.Left, "TOPRIGHT", 0, 0 }, { "TOPRIGHT", tab.Right, "TOPLEFT", 0, 0 } })
+    PVPMatchScoreboard = board("PVPMatchScoreboard", tab)
+    sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
+    sim.run(1)
+    local art = atlases(PVPMatchScoreboard)
+    check(art["tab-left"] and art["tab-right"] and art["tab-center"], "the three pieces of the tab were not copied")
+    check(art["tab-left"] and art["tab-left"].anchoredTo == body(PVPMatchScoreboard), "the end piece should be pinned to our own frame")
+    check(art["tab-center"] and art["tab-center"].anchoredTo == art["tab-right"], "the middle piece should be pinned between our own end pieces")
+    check(sim.showing("Time Elapsed") ~= nil, "no time on the copied tab")
+    PVPMatchScoreboard:Hide()
+    -- a tab built some other way: nothing half-drawn, the plain plate instead, and no error
+    local odd = CreateFrame("Frame")
+    odd.Left = piece("tab-left", { { "TOPLEFT", odd, "TOPLEFT", -3, 0 } })
+    PVPMatchScoreboard = board("PVPMatchScoreboard", odd)
+    sim.fire("ADDON_LOADED", "Blizzard_PVPMatch")
+    sim.run(1)
+    check(next(atlases(PVPMatchScoreboard)) == nil, "pieces of a tab we could not copy were left showing")
+    check(sim.showing("Time Elapsed") ~= nil, "no time on the plain plate")
+    PVPMatchScoreboard:Hide()
+    PVPMatchScoreboard = nil
+    sim.printed = {}
+end)
+
 scenario("the scoreboard's team tabs don't empty the enemy list or cut a team from the history", function()
     wipe(GK.db.matches)
     newMatch()

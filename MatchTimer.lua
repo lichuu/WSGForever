@@ -110,29 +110,146 @@ local function Current()
 end
 
 -- The game's scoreboard used to end with "Time Elapsed"; this client's does
--- not. We put it back under the bottom-right corner, level with the team
--- tabs, on the scoreboard and on the results window at the end of a match.
--- The line is our own frame hung on theirs: nothing of the game's is changed.
+-- not. We put it back as one more tab hanging from the bottom edge, at the
+-- right-hand end, on the scoreboard and on the results window at the end of
+-- a match. It is our own frame hung on theirs: nothing of the game's is
+-- changed, and it cannot be clicked.
 local BOARDS = { "PVPMatchScoreboard", "PVPMatchResults" }
 local LABEL = type(TIME_ELAPSED) == "string" and TIME_ELAPSED or "Time Elapsed:"
+local PAD = 16 -- space either side of the words
+
+local function IsWidget(v)
+    return type(v) == "table" and v.GetObjectType ~= nil
+end
+
+-- One of the board's own team tabs, to take the looks and the height from.
+local function BoardTab(board)
+    local function dig(...)
+        local at = board
+        for _, key in ipairs({ ... }) do
+            at = type(at) == "table" and at[key] or nil
+        end
+        return IsWidget(at) and at or nil
+    end
+    return dig("Tab3") or dig("Content", "TabContainer", "TabGroup", "Tab3")
+        or dig("tab3") or dig("content", "tabContainer", "tabGroup", "tab3")
+end
+
+-- Draws an unselected tab on our frame by copying the three pieces of a real
+-- one: what each shows, its size, and how it is pinned. False if the tab is
+-- not built the way we expect, leaving nothing behind.
+local function CopyTabArt(body, tab)
+    local copies, made = {}, {}
+    local function fail()
+        for _, tex in ipairs(made) do tex:Hide() end
+        return false
+    end
+    for _, key in ipairs({ "Left", "Right", "Middle" }) do
+        local from = tab[key]
+        if not (IsWidget(from) and from.GetAtlas and from.GetNumPoints) then return fail() end
+        local tex = body:CreateTexture(nil, "BACKGROUND")
+        made[#made + 1] = tex
+        local atlas = from:GetAtlas()
+        if type(atlas) == "string" and atlas ~= "" then
+            tex:SetAtlas(atlas)
+        else
+            local file = from:GetTexture()
+            if not file then return fail() end
+            tex:SetTexture(file)
+            tex:SetTexCoord(from:GetTexCoord())
+        end
+        local w, h = from:GetSize()
+        if type(w) ~= "number" or type(h) ~= "number" then return fail() end
+        tex:SetSize(w, h)
+        copies[from] = tex
+    end
+    for from, tex in pairs(copies) do
+        local n = from:GetNumPoints()
+        if type(n) ~= "number" or n < 1 then return fail() end
+        tex:ClearAllPoints()
+        for i = 1, n do
+            local point, rel, relPoint, x, y = from:GetPoint(i)
+            local to = (rel == nil or rel == tab) and body or copies[rel]
+            if not (to and type(point) == "string") then return fail() end
+            tex:SetPoint(point, to, relPoint or point, x or 0, y or 0)
+        end
+    end
+    return true
+end
+
+-- Where a real tab sits: how far its top edge is from the board's bottom
+-- edge, how tall it is, and its size next to the board's (tabs can be drawn
+-- at their own scale). Nil until the game has laid the tabs out.
+local function TabPlacement(board, tab)
+    if not tab then return nil end
+    local function num(v)
+        v = GK.Plain(v)
+        return type(v) == "number" and v or nil
+    end
+    local top, bottom, height = num(tab:GetTop()), num(board:GetBottom()), num(tab:GetHeight())
+    local ts, bs = num(tab:GetEffectiveScale()), num(board:GetEffectiveScale())
+    if not (top and bottom and height and ts and bs) or bs <= 0 or ts <= 0 then return nil end
+    local scale = ts / bs
+    local drop = top * scale - bottom
+    if drop < -40 or drop > 40 or height < 10 or height > 80 or scale < 0.5 or scale > 2 then return nil end
+    return drop, height, scale
+end
+
 local boardLines = {}
 local function AttachToBoards()
     for _, name in ipairs(BOARDS) do
         local board = _G[name]
-        if type(board) == "table" and board.GetObjectType and not boardLines[board] then
+        if IsWidget(board) and not boardLines[board] then
+            -- The holder only keeps time; the body is what shows.
             local holder = CreateFrame("Frame", nil, board)
             boardLines[board] = holder
-            holder:SetSize(220, 20)
-            holder:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8, -7)
-            local text = holder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            text:SetPoint("RIGHT")
-            local tick = 1
+            holder:SetSize(1, 1)
+            holder:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8, 0)
+            local body = CreateFrame("Frame", nil, holder)
+            body:SetSize(180, 32)
+            body:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8, 2)
+            body:Hide()
+            local text = body:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            text:SetPoint("CENTER", body, "CENTER", 0, 2)
+
+            -- Its own tab says where to sit; any board's tab will do for the looks.
+            local tab = BoardTab(board)
+            local dressed = false
+            for _, other in ipairs({ board, _G.PVPMatchScoreboard or false, _G.PVPMatchResults or false }) do
+                local model = not dressed and IsWidget(other) and BoardTab(other)
+                if model then
+                    local ok, done = pcall(CopyTabArt, body, model)
+                    dressed = ok and done or false
+                end
+            end
+            if not dressed then
+                -- No tab to copy: a plain dark plate does the same job.
+                local plate = body:CreateTexture(nil, "BACKGROUND")
+                plate:SetAllPoints(body)
+                plate:SetColorTexture(0, 0, 0, 0.7)
+            end
+
+            local tick, placedAt = 1, nil
             holder:SetScript("OnUpdate", GK.Safe("Scoreboard time", function(_, dt)
                 tick = tick + dt
                 if tick < 0.25 then return end
                 tick = 0
-                local seconds = GK.db.matchTimer and Current()
-                text:SetText(seconds and (LABEL .. " |cffffffff" .. Text(seconds) .. "|r") or "")
+                -- In a match its time; with the frames unlocked or in test
+                -- mode, a sample to look at.
+                local seconds = GK.db.matchTimer and (Current() or (GK.ShouldShowAll() and 754))
+                if not seconds then body:Hide() return end
+                text:SetText(LABEL .. " |cffffffff" .. Text(seconds) .. "|r")
+                -- Level with the real tabs, once they have been laid out.
+                local ok, drop, tall, scale = pcall(TabPlacement, board, tab)
+                if ok and drop and placedAt ~= drop then
+                    placedAt = drop
+                    body:SetScale(scale)
+                    body:ClearAllPoints()
+                    body:SetPoint("TOPRIGHT", board, "BOTTOMRIGHT", -8 / scale, drop / scale)
+                    body:SetHeight(tall)
+                end
+                body:SetWidth((text:GetStringWidth() or 120) + PAD * 2)
+                body:Show()
             end))
         end
     end

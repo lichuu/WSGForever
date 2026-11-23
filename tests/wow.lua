@@ -75,6 +75,8 @@ function methods:SetWidth(w) self.w = w end
 function methods:SetHeight(h) self.h = h end
 function methods:GetWidth() return self.w or 100 end
 function methods:GetHeight() return self.h or 20 end
+function methods:SetAtlas(a) self.atlas = a end
+function methods:GetAtlas() return self.atlas end
 function methods:GetStringWidth() return 50 end
 function methods:GetUnboundedStringWidth() return 50 end
 function methods:GetScale() return self.scale or 1 end
