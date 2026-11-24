@@ -503,7 +503,7 @@ end
 -- addon works the way a player would do it: the chat box opens with the
 -- line already typed, for the battleground (or your raid or party), and
 -- your own Enter sends it. Escape drops it.
-GK.AD = "WSGForever: flag carrier health, rez timer, enemy frames and one-click callouts for Warsong Gulch. Free on CurseForge, search WSGForever."
+GK.AD = "WSGForever: flag carrier health, rez timer, enemy frames and one-click callouts for Warsong Gulch. Find it on CurseForge."
 
 function GK.Advertise()
     local open = (ChatFrameUtil and ChatFrameUtil.OpenChat) or ChatFrame_OpenChat
