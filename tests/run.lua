@@ -736,48 +736,59 @@ scenario("every key binding presses a button that exists and has a name in the m
         "/cleartarget\n/targetexact Cheat Jump\n/ping [@target,exists] assist\n/targetlasttarget", "ping-by-name macro wrong: " .. tostring(WSGForeverBindPingFC:GetAttribute("macrotext")))
 end)
 
-scenario("/fc ad brings up a button that sends the line on your click, and never sends by itself", function()
+scenario("/fc ad puts a button on the callout bars that sends the line on your click, and takes it off again", function()
     local sentChat = false
     local oldSend, oldInfoSend = SendChatMessage, C_ChatInfo.SendChatMessage
     SendChatMessage = function() sentChat = true end
     C_ChatInfo.SendChatMessage = SendChatMessage
-    local ad = WSGForeverAdButton
-    check(ad ~= nil and not ad:IsShown(), "the button should exist and start hidden")
+    local ad, abAd = WSGForeverCalloutsAd, WSGForeverABCalloutsAd
+    check(ad ~= nil and abAd ~= nil, "each bar should have its own ad button")
+    check(not GK.db.adButton and not ad:IsShown() and not abAd:IsShown(), "the ad button must be off until asked for")
+    local plain, abPlain = WSGForeverCallouts:GetHeight(), WSGForeverABCallouts:GetHeight()
     SlashCmdList.WSGFOREVER("ad")
-    check(ad:IsShown(), "/fc ad did not bring the button up")
+    check(GK.db.adButton and ad:IsShown() and abAd:IsShown(), "/fc ad did not put the button on the bars")
     local line = ad:GetAttribute("macrotext") or ""
     check(ad:GetAttribute("type") == "macro" and line:find("^/[ipsra]+ WSGForever: ") ~= nil, "the button should send the line to the group, got " .. line)
     check(line:find("CurseForge") ~= nil, "the line should say where to get it")
     check(#line <= 255, "the line is too long for one chat message: " .. #line)
-    -- clicked: the press and the release both arrive, and it goes away just after
-    ad.scripts.PostClick(ad, "LeftButton", true)
-    check(ad:IsShown(), "the button went away before the release could count")
-    ad.scripts.PostClick(ad, "LeftButton", false)
-    sim.run(1)
-    check(not ad:IsShown(), "the button stayed after being clicked")
-    -- nobody clicks: it puts itself away
-    SlashCmdList.WSGFOREVER("ad")
-    sim.run(10)
-    check(ad:IsShown(), "the button went away too soon")
-    sim.run(11)
-    check(not ad:IsShown(), "the button never went away by itself")
-    -- in combat it cannot be shown or hidden: say so, and wait for the fight to end
+    check(abAd:GetAttribute("macrotext") == line, "both bars should send the same line")
+    -- the Warsong bar has room in its last row; the Arathi bar gets one more row
+    check(WSGForeverCallouts:GetHeight() == plain, "the Warsong bar should not change size")
+    check(WSGForeverABCallouts:GetHeight() > abPlain, "the Arathi bar should grow a row for the button")
+    -- the key binding has its own hidden button with the same line, on or off
+    check(not WSGForeverAdButton:IsShown() and WSGForeverAdButton:GetAttribute("macrotext") == line, "the key binding's button is wrong")
+    -- in combat the bar is left alone, and catches up when the fight ends
     sim.inCombat = true
     sim.printed = {}
     SlashCmdList.WSGFOREVER("ad")
-    check(not ad:IsShown(), "the button was shown in combat")
-    check(table.concat(sim.printed, " "):find("Key Bindings") ~= nil, "in combat it should point at the key binding")
+    check(not GK.db.adButton and ad:IsShown(), "the bar changed during combat")
+    check(table.concat(sim.printed, " "):find("when the fight ends") ~= nil, "in combat it should say the bar updates afterwards")
     sim.inCombat = false
-    SlashCmdList.WSGFOREVER("ad")
-    sim.inCombat = true
-    ad.scripts.PostClick(ad, "LeftButton", false)
-    sim.run(2)
-    check(ad:IsShown(), "the button was hidden during combat")
-    sim.inCombat = false
-    sim.run(0.5)
-    check(not ad:IsShown(), "the button stayed after combat ended")
+    sim.fire("PLAYER_REGEN_ENABLED")
+    check(not ad:IsShown() and not abAd:IsShown(), "the button stayed after being turned off")
+    check(WSGForeverABCallouts:GetHeight() == abPlain, "the Arathi bar did not shrink back")
+    check(WSGForeverAdButton:GetAttribute("macrotext") == line, "the key binding should still work with the bar button off")
     check(not sentChat, "the addon must not send chat by itself")
     SendChatMessage, C_ChatInfo.SendChatMessage = oldSend, oldInfoSend
+    sim.printed = {}
+end)
+
+scenario("no enemy frames in Alterac Valley, where a list of fifteen would mislead", function()
+    newMatch()
+    sim.scores = { myRow(), { name = "Amy Ally", classToken = "PRIEST", faction = 1 } }
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(WSGForeverEnemies:IsShown(), "enemy frames should show in Warsong Gulch")
+    sim.zone, sim.instanceID = "Alterac Valley", 30
+    sim.fire("PLAYER_ENTERING_WORLD")
+    sim.fire("UPDATE_BATTLEFIELD_SCORE")
+    check(not WSGForeverEnemies:IsShown(), "enemy frames should not show in Alterac Valley")
+    sim.zone, sim.instanceID = "Arathi Basin", 529
+    sim.fire("PLAYER_ENTERING_WORLD")
+    check(WSGForeverEnemies:IsShown(), "enemy frames should show in Arathi Basin")
+    sim.zone, sim.instanceID = nil, nil
+    sim.fire("PLAYER_ENTERING_WORLD")
+    check(WSGForeverEnemies:IsShown(), "enemy frames did not come back in Warsong Gulch")
+    sim.scores = {}
     sim.printed = {}
 end)
 

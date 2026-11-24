@@ -30,7 +30,7 @@ local SECTIONS = {
         { "callouts", "Callout bar", "One-click callouts to battleground chat.",
             "One-click location callouts to battleground chat." },
         { "enemies", "Enemy frames", "Enemy team with class, health and range.",
-            "The enemy team with class, health and range. Left click targets, right click focuses, middle click pings." },
+            "The enemy team with class, health and range. Left click targets, right click focuses, middle click pings. Not shown in Alterac Valley, where the teams are too big for a list." },
         { "enemyNames", "Enemy names", "Names on the enemy frames.",
             "Shows each enemy's name on their row. Turn it off for bars and class icons only." },
         { "matchTimer", "Scoreboard time", "Time Elapsed on the scoreboard.",

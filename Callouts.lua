@@ -68,6 +68,14 @@ end
 NameButtons(rows, "WSGForeverCallout")
 NameButtons(abRows, "WSGForeverABCallout")
 
+-- One more button, off unless you turn it on with /fc ad: a line about the
+-- addon for your team. It is a callout like the rest, so a click sends it
+-- at any point in a match, and it has a key binding of its own.
+local function AdSpec(name)
+    return { name = name, label = GOLD .. "AD", icon = 134420, dim = true, msg = GK.AD }
+end
+_G["BINDING_NAME_CLICK WSGForeverAdButton:LeftButton"] = "Tell your team about WSGForever"
+
 local SIZE, GAP = 34, 2
 
 local Callouts = {}
@@ -121,7 +129,7 @@ local function MakeButton(parent, spec)
 
     b:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText(spec.msg, 1, 1, 1)
+        GameTooltip:SetText(spec.msg, 1, 1, 1, 1, true)
         GameTooltip:Show()
     end)
     b:SetScript("OnLeave", GameTooltip_Hide)
@@ -143,81 +151,42 @@ local function MakeBar(name, set, key, default)
             b:SetPoint("TOPLEFT", offset + (c - 1) * (SIZE + GAP), -(r - 1) * (SIZE + GAP))
         end
     end
+    -- The ad button goes at the right-hand end of the last row where that
+    -- row has room; otherwise it gets a row of its own, and the bar is that
+    -- much taller while it shows.
+    local last = #set
+    local ownRow = #set[last] == #set[1]
+    f.ad = MakeButton(f, AdSpec(name .. "Ad"))
+    f.ad:SetPoint("TOPLEFT", width - SIZE, -(ownRow and last or last - 1) * (SIZE + GAP))
+    f.ad:Hide()
+    f.plainHeight, f.adHeight = height, ownRow and height + SIZE + GAP or height
     GK.MakeMovable(f, key, default)
     return f
 end
 
--- The line about the addon (/fc ad) -------------------------------------------
--- It goes out the way a callout does, on a real click of a secure button:
--- once a match is live the game sends chat for nothing less. (Opening the
--- chat box with the line typed in only worked behind the gates.) /fc ad
--- brings the button up for one click; a key binding presses it directly.
-local ad, adHideAt
-_G["BINDING_NAME_CLICK WSGForeverAdButton:LeftButton"] = "Tell your team about WSGForever"
+-- Shows or hides the ad button on a bar. Bars cannot change in combat.
+local function SyncAd(f)
+    if InCombatLockdown() then return end
+    local on = GK.db.adButton and true or false
+    f.ad:SetShown(on)
+    f:SetHeight(on and f.adHeight or f.plainHeight)
+end
 
-local function MakeAd()
+-- The key binding for the ad presses this hidden button, so it works
+-- whether or not the button on the bar is turned on.
+local function MakeAdBinding()
     local b = CreateFrame("Button", "WSGForeverAdButton", UIParent, "SecureActionButtonTemplate")
-    b:SetSize(320, 34)
-    b:SetPoint("CENTER", 0, -150)
-    b:SetFrameStrata("DIALOG")
     b:RegisterForClicks("AnyUp", "AnyDown")
     b:SetAttribute("type", "macro")
     b.msg = GK.AD
     buttons[#buttons + 1] = b -- so it follows the same chat channel as the callouts
-
-    local bg = b:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    bg:SetColorTexture(0.06, 0.06, 0.07, 0.95)
-    local line = b:CreateTexture(nil, "BORDER")
-    line:SetColorTexture(1, 0.82, 0, 1)
-    line:SetHeight(2)
-    line:SetPoint("BOTTOMLEFT")
-    line:SetPoint("BOTTOMRIGHT")
-    local hot = b:CreateTexture(nil, "HIGHLIGHT")
-    hot:SetAllPoints()
-    hot:SetColorTexture(1, 0.82, 0, 0.15)
-    b.text = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    b.text:SetPoint("CENTER")
-    b.text:SetText("Click to tell your team about WSGForever")
-    b:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText(GK.AD, 1, 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    b:SetScript("OnLeave", GameTooltip_Hide)
-    -- Gone a moment after the click: the press and the release both count
-    -- as clicks, and the game acts on only one of them.
-    b:SetScript("PostClick", function() adHideAt = GetTime() + 0.4 end)
     b:Hide()
-
-    -- Puts it away again, after the click or when nobody clicked. A button
-    -- like this cannot be hidden in combat, so it waits for the fight to end.
-    local watch = CreateFrame("Frame")
-    watch:SetScript("OnUpdate", GK.Safe("Ad button", function()
-        if adHideAt and GetTime() >= adHideAt and not InCombatLockdown() then
-            adHideAt = nil
-            b:Hide()
-        end
-    end))
-    return b
-end
-
-function Callouts:ShowAd()
-    if not ad then return end
-    if InCombatLockdown() then
-        GK.Print("The game won't bring that button up in combat. Try again after the fight, or bind a key to it under Key Bindings > WSGForever, which works any time.")
-        return
-    end
-    UpdateMacros()
-    ad:Show()
-    adHideAt = GetTime() + 20
-    GK.Print("Click the button to send it. It goes away by itself in 20 seconds.")
 end
 
 function Callouts:Init()
     local f = MakeBar("WSGForeverCallouts", rows, "Callouts", { "CENTER", "CENTER", 460, -230 })
     self.frame = f
-    ad = MakeAd()
+    MakeAdBinding()
     self.abFrame = MakeBar("WSGForeverABCallouts", abRows, "AB callouts", { "CENTER", "CENTER", 460, -80 })
 
     f:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -227,11 +196,15 @@ end
 
 function Callouts:OutOfCombat()
     UpdateMacros()
+    SyncAd(self.frame)
+    SyncAd(self.abFrame)
 end
 
 function Callouts:Refresh()
     if not self.frame then return end
     UpdateMacros()
+    SyncAd(self.frame)
+    SyncAd(self.abFrame)
     -- Until it has been dragged somewhere of its own, the Arathi Basin bar
     -- takes the Warsong bar's spot (same bottom right corner): the two are
     -- never needed at once, and that spot is already clear on your screen.

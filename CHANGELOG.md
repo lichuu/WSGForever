@@ -1,7 +1,8 @@
 # WSGForever
 
 ## 1.0.1
-- Fixed `/fc ad` not sending once a match was under way. It now brings up a button, and your click sends the line, the same way the callout buttons work. It can also be bound to a key under Key Bindings > WSGForever.
+- `/fc ad` now adds a small AD button to the callout bars (and `/fc ad` again removes it). One click tells your team about WSGForever, like any other callout, at any point in a match. The 1.0.0 version typed the line into your chat box, which the game only sent before the gates opened. It can also be bound to a key under Key Bindings > WSGForever.
+- The enemy frames are no longer shown in Alterac Valley, where the list could only hold fifteen of the forty enemies.
 
 ## 1.0.0
 - `/fc ad` types a line about WSGForever into chat for your battleground (or raid or party), saying it is on CurseForge. Nothing is sent until you press Enter; Escape drops it.

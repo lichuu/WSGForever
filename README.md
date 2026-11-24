@@ -19,7 +19,7 @@ The scoreboard gets its Time Elapsed back, as one more tab at the bottom right t
 ### Enemy frames
 ![The enemy team list](media/gallery/enemy-frames.jpg)
 
-The whole enemy team with class, health, mana, range, who is dead and how many of your team are on each player; the flag carrier is highlighted. Left click targets, right click sets focus, middle click pings.
+The whole enemy team with class, health, mana, range, who is dead and how many of your team are on each player; the flag carrier is highlighted. Left click targets, right click sets focus, middle click pings. They show in Warsong Gulch and Arathi Basin, not in Alterac Valley.
 
 ### Callout bar
 ![The callout bar](media/gallery/callout-bar.jpg)
@@ -65,7 +65,7 @@ Everything is in the settings window; these are the chat commands that remain.
 - `/fc`: open the settings window (also on the minimap button and under Options > AddOns).
 - `/fc history`: open the match history.
 - `/fc who`: who else in your group has WSGForever, and their version.
-- `/fc ad`: brings up a button that tells your team about WSGForever; one click sends it. It can also be bound to a key.
+- `/fc ad`: adds or removes a callout button that tells your team about WSGForever.
 - `/fc unlock` / `/fc lock`: move frames by dragging; scroll over a frame to resize it.
 - `/fc test`: preview everything outside a battleground.
 - `/fc reset`: reset positions and sizes.

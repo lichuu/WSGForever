@@ -29,6 +29,7 @@ local defaults = {
     queueAlert = true, -- countdown to enter when a battleground queue pops
     queueSound = false, -- ding on a queue pop, heard with sound effects muted
     enemyNames = true, -- names on the enemy frames
+    adButton = false, -- /fc ad: a button on the callout bar that tells your team about the addon
     enemyStyle = "flat", -- look of the enemy frames, one of GK.enemyStyles
     minimapButton = true,
     minimapAngle = 205, -- degrees around the minimap
@@ -499,13 +500,20 @@ local function SetScale(args)
     GK.Refresh()
 end
 
--- What /fc ad says to your team. The sending is in Callouts.lua, as a
--- button you click: the game sends chat on nothing less during a match.
+-- What the ad button says to your team. The button itself is in
+-- Callouts.lua: the game sends chat on nothing less than a click during a
+-- match. /fc ad puts it on the callout bar, or takes it off again.
 GK.AD = "WSGForever: flag carrier health, rez timer, enemy frames and one-click callouts for Warsong Gulch, on CurseForge."
 
 function GK.Advertise()
-    local callouts = GK.modules.Callouts
-    if callouts and callouts.ShowAd then callouts:ShowAd() end
+    GK.db.adButton = not GK.db.adButton
+    if GK.db.adButton then
+        GK.Print("The AD button is on your callout bar: one click tells your team about WSGForever. /fc ad again takes it off.")
+    else
+        GK.Print("The AD button is off your callout bar.")
+    end
+    if InCombatLockdown() then GK.Print("The bar can't change in combat; it will update when the fight ends.") end
+    GK.Refresh()
 end
 
 local function Help()
@@ -513,7 +521,7 @@ local function Help()
     print("  /fc                - open the settings window")
     print("  /fc history        - open the match history")
     print("  /fc who            - who in your group has WSGForever, and their version")
-    print("  /fc ad             - bring up a button that tells your team about WSGForever")
+    print("  /fc ad             - add or remove a callout button that tells your team about WSGForever")
     print("  /fc unlock | lock  - move frames (scroll on them to resize)")
     print("  /fc test           - preview everything outside a battleground")
     print("  /fc reset          - reset frame positions and sizes")

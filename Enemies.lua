@@ -883,7 +883,9 @@ end
 function Enemies:Refresh()
     if not self.frame then return end
     for _, row in ipairs(rows) do row.name:SetShown(GK.db.enemyNames) end
-    local show = GK.db.enemies and (GK.InBattleground() or GK.ShouldShowAll())
+    -- Not in Alterac Valley: a list that holds fifteen of forty enemies
+    -- would look complete and not be.
+    local show = GK.db.enemies and not GK.InAV() and (GK.InBattleground() or GK.ShouldShowAll())
     self.frame:SetShown(show)
     if show then
         roster = {}
