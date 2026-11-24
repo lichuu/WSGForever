@@ -499,11 +499,28 @@ local function SetScale(args)
     GK.Refresh()
 end
 
+-- Forever blocks addons from sending chat, so telling your team about the
+-- addon works the way a player would do it: the chat box opens with the
+-- line already typed, for the battleground (or your raid or party), and
+-- your own Enter sends it. Escape drops it.
+GK.AD = "WSGForever: flag carrier health, rez timer, enemy frames and one-click callouts for Warsong Gulch. Free on CurseForge, search WSGForever."
+
+function GK.Advertise()
+    local open = (ChatFrameUtil and ChatFrameUtil.OpenChat) or ChatFrame_OpenChat
+    if not open then GK.Print("Couldn't open the chat box here. The line is: " .. GK.AD) return end
+    local channel = GK.ChatChannel()
+    local slash = channel == "INSTANCE_CHAT" and "/i " or channel == "RAID" and "/ra " or channel == "PARTY" and "/p " or "/s "
+    -- A moment later: the chat box is still closing from the command that got us here.
+    C_Timer.After(0.05, function() open(slash .. GK.AD) end)
+    GK.Print("Press Enter to send it, Escape to drop it.")
+end
+
 local function Help()
     GK.Print("commands (everything else is in the settings window):")
     print("  /fc                - open the settings window")
     print("  /fc history        - open the match history")
     print("  /fc who            - who in your group has WSGForever, and their version")
+    print("  /fc ad             - type a line about WSGForever into chat for your team; Enter sends it")
     print("  /fc unlock | lock  - move frames (scroll on them to resize)")
     print("  /fc test           - preview everything outside a battleground")
     print("  /fc reset          - reset frame positions and sizes")
@@ -559,6 +576,8 @@ SlashCmdList.WSGFOREVER = function(input)
     elseif cmd == "history" then
         local h = GK.modules.History
         if h then h:Toggle() end
+    elseif cmd == "ad" then
+        GK.Advertise()
     elseif cmd == "minimap" then
         GK.db.minimapButton = not GK.db.minimapButton
         GK.Print("minimap button " .. (GK.db.minimapButton and "on" or "off"))

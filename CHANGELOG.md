@@ -1,6 +1,7 @@
 # WSGForever
 
 ## Unreleased
+- `/fc ad` types a line about WSGForever into chat for your battleground (or raid or party), with where to get it. Nothing is sent until you press Enter; Escape drops it.
 - A line at the foot of the settings tab: made with love, by <bad girls club>.
 
 ## 0.8.4

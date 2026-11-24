@@ -736,6 +736,36 @@ scenario("every key binding presses a button that exists and has a name in the m
         "/cleartarget\n/targetexact Cheat Jump\n/ping [@target,exists] assist\n/targetlasttarget", "ping-by-name macro wrong: " .. tostring(WSGForeverBindPingFC:GetAttribute("macrotext")))
 end)
 
+scenario("/fc ad types the line into chat for the team and leaves the sending to you", function()
+    local opened, sentChat = {}, false
+    ChatFrame_OpenChat = function(text) opened[#opened + 1] = text end
+    local oldSend, oldInfoSend = SendChatMessage, C_ChatInfo.SendChatMessage
+    SendChatMessage = function() sentChat = true end
+    C_ChatInfo.SendChatMessage = SendChatMessage
+    SlashCmdList.WSGFOREVER("ad")
+    check(#opened == 0, "the chat box opened while the command's own was still closing")
+    sim.run(0.2)
+    check(#opened == 1, "expected the chat box to open once, got " .. #opened)
+    local line = opened[1] or ""
+    check(line:find("^/[ipsra]+ WSGForever: ") ~= nil, "the line should start with a chat command for the group, got " .. line)
+    check(line:find("CurseForge") ~= nil, "the line should say where to get it")
+    check(#line <= 255, "the line is too long for one chat message: " .. #line)
+    check(not sentChat, "the addon must not send chat by itself")
+    -- the newer name for the same call is used where the game has it
+    ChatFrameUtil = { OpenChat = function(text) opened[#opened + 1] = "new:" .. text end }
+    SlashCmdList.WSGFOREVER("ad")
+    sim.run(0.2)
+    check((opened[2] or ""):find("^new:/") ~= nil, "the game's newer chat call was not used")
+    -- no way to open chat at all: the line is printed so it can still be typed
+    ChatFrameUtil, ChatFrame_OpenChat = nil, nil
+    sim.printed = {}
+    SlashCmdList.WSGFOREVER("ad")
+    local printed = table.concat(sim.printed, " ")
+    check(printed:find("CurseForge") ~= nil, "with no chat box to open, the line should be printed")
+    SendChatMessage, C_ChatInfo.SendChatMessage = oldSend, oldInfoSend
+    sim.printed = {}
+end)
+
 scenario("the group version check hears others, ignores itself, and mentions a newer version once", function()
     local peers = GK.modules.Peers
     check(peers.Newer("0.7.0", "0.6.0") and peers.Newer("v0.6.1", "0.6.0") and peers.Newer("0.6.0", "0.6.0-beta1"), "newer versions not recognised")
