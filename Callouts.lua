@@ -147,9 +147,77 @@ local function MakeBar(name, set, key, default)
     return f
 end
 
+-- The line about the addon (/fc ad) -------------------------------------------
+-- It goes out the way a callout does, on a real click of a secure button:
+-- once a match is live the game sends chat for nothing less. (Opening the
+-- chat box with the line typed in only worked behind the gates.) /fc ad
+-- brings the button up for one click; a key binding presses it directly.
+local ad, adHideAt
+_G["BINDING_NAME_CLICK WSGForeverAdButton:LeftButton"] = "Tell your team about WSGForever"
+
+local function MakeAd()
+    local b = CreateFrame("Button", "WSGForeverAdButton", UIParent, "SecureActionButtonTemplate")
+    b:SetSize(320, 34)
+    b:SetPoint("CENTER", 0, -150)
+    b:SetFrameStrata("DIALOG")
+    b:RegisterForClicks("AnyUp", "AnyDown")
+    b:SetAttribute("type", "macro")
+    b.msg = GK.AD
+    buttons[#buttons + 1] = b -- so it follows the same chat channel as the callouts
+
+    local bg = b:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0.06, 0.06, 0.07, 0.95)
+    local line = b:CreateTexture(nil, "BORDER")
+    line:SetColorTexture(1, 0.82, 0, 1)
+    line:SetHeight(2)
+    line:SetPoint("BOTTOMLEFT")
+    line:SetPoint("BOTTOMRIGHT")
+    local hot = b:CreateTexture(nil, "HIGHLIGHT")
+    hot:SetAllPoints()
+    hot:SetColorTexture(1, 0.82, 0, 0.15)
+    b.text = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    b.text:SetPoint("CENTER")
+    b.text:SetText("Click to tell your team about WSGForever")
+    b:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText(GK.AD, 1, 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", GameTooltip_Hide)
+    -- Gone a moment after the click: the press and the release both count
+    -- as clicks, and the game acts on only one of them.
+    b:SetScript("PostClick", function() adHideAt = GetTime() + 0.4 end)
+    b:Hide()
+
+    -- Puts it away again, after the click or when nobody clicked. A button
+    -- like this cannot be hidden in combat, so it waits for the fight to end.
+    local watch = CreateFrame("Frame")
+    watch:SetScript("OnUpdate", GK.Safe("Ad button", function()
+        if adHideAt and GetTime() >= adHideAt and not InCombatLockdown() then
+            adHideAt = nil
+            b:Hide()
+        end
+    end))
+    return b
+end
+
+function Callouts:ShowAd()
+    if not ad then return end
+    if InCombatLockdown() then
+        GK.Print("The game won't bring that button up in combat. Try again after the fight, or bind a key to it under Key Bindings > WSGForever, which works any time.")
+        return
+    end
+    UpdateMacros()
+    ad:Show()
+    adHideAt = GetTime() + 20
+    GK.Print("Click the button to send it. It goes away by itself in 20 seconds.")
+end
+
 function Callouts:Init()
     local f = MakeBar("WSGForeverCallouts", rows, "Callouts", { "CENTER", "CENTER", 460, -230 })
     self.frame = f
+    ad = MakeAd()
     self.abFrame = MakeBar("WSGForeverABCallouts", abRows, "AB callouts", { "CENTER", "CENTER", 460, -80 })
 
     f:RegisterEvent("GROUP_ROSTER_UPDATE")

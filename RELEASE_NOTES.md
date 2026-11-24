@@ -1,2 +1,1 @@
-- `/fc ad` types a line about WSGForever into chat for your battleground (or raid or party), saying it is on CurseForge. Nothing is sent until you press Enter; Escape drops it.
-- A line at the foot of the settings tab: made with love, by <bad girls club>.
+- Fixed `/fc ad` not sending once a match was under way. It now brings up a button, and your click sends the line, the same way the callout buttons work. It can also be bound to a key under Key Bindings > WSGForever.

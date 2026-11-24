@@ -65,7 +65,7 @@ Everything is in the settings window; these are the chat commands that remain.
 - `/fc`: open the settings window (also on the minimap button and under Options > AddOns).
 - `/fc history`: open the match history.
 - `/fc who`: who else in your group has WSGForever, and their version.
-- `/fc ad`: types a line about WSGForever into chat for your team; press Enter to send it.
+- `/fc ad`: brings up a button that tells your team about WSGForever; one click sends it. It can also be bound to a key.
 - `/fc unlock` / `/fc lock`: move frames by dragging; scroll over a frame to resize it.
 - `/fc test`: preview everything outside a battleground.
 - `/fc reset`: reset positions and sizes.

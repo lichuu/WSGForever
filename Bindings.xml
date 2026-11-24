@@ -9,6 +9,7 @@
 	<Binding name="CLICK WSGForeverBindTargetEFC:LeftButton" category="ADDONS"/>
 	<Binding name="CLICK WSGForeverBindPingEFC:LeftButton" category="ADDONS"/>
 	<Binding name="CLICK WSGForeverBindPingFC:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK WSGForeverAdButton:LeftButton" category="ADDONS"/>
 	<Binding name="CLICK WSGForeverCallout1:LeftButton" category="ADDONS"/>
 	<Binding name="CLICK WSGForeverCallout2:LeftButton" category="ADDONS"/>
 	<Binding name="CLICK WSGForeverCallout3:LeftButton" category="ADDONS"/>

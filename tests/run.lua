@@ -722,7 +722,7 @@ scenario("every key binding presses a button that exists and has a name in the m
             check(_G[button] ~= nil, "binding presses a button that does not exist: " .. button)
         end
     end
-    check(n == 51 and clicks == 49, "expected 51 bindings with 49 button presses, got " .. n .. " and " .. clicks)
+    check(n == 52 and clicks == 50, "expected 52 bindings with 50 button presses, got " .. n .. " and " .. clicks)
     check(BINDING_HEADER_WSGFOREVER == "WSGForever", "bindings header missing")
     check(WSGForeverCallout1.msg == "EFC Is Alliance Flag Room" and WSGForeverCallout26.msg:find("LOW") ~= nil, "callout buttons out of order")
     -- the carrier keys point at the carrier slot once someone is carrying
@@ -736,32 +736,47 @@ scenario("every key binding presses a button that exists and has a name in the m
         "/cleartarget\n/targetexact Cheat Jump\n/ping [@target,exists] assist\n/targetlasttarget", "ping-by-name macro wrong: " .. tostring(WSGForeverBindPingFC:GetAttribute("macrotext")))
 end)
 
-scenario("/fc ad types the line into chat for the team and leaves the sending to you", function()
-    local opened, sentChat = {}, false
-    ChatFrame_OpenChat = function(text) opened[#opened + 1] = text end
+scenario("/fc ad brings up a button that sends the line on your click, and never sends by itself", function()
+    local sentChat = false
     local oldSend, oldInfoSend = SendChatMessage, C_ChatInfo.SendChatMessage
     SendChatMessage = function() sentChat = true end
     C_ChatInfo.SendChatMessage = SendChatMessage
+    local ad = WSGForeverAdButton
+    check(ad ~= nil and not ad:IsShown(), "the button should exist and start hidden")
     SlashCmdList.WSGFOREVER("ad")
-    check(#opened == 0, "the chat box opened while the command's own was still closing")
-    sim.run(0.2)
-    check(#opened == 1, "expected the chat box to open once, got " .. #opened)
-    local line = opened[1] or ""
-    check(line:find("^/[ipsra]+ WSGForever: ") ~= nil, "the line should start with a chat command for the group, got " .. line)
+    check(ad:IsShown(), "/fc ad did not bring the button up")
+    local line = ad:GetAttribute("macrotext") or ""
+    check(ad:GetAttribute("type") == "macro" and line:find("^/[ipsra]+ WSGForever: ") ~= nil, "the button should send the line to the group, got " .. line)
     check(line:find("CurseForge") ~= nil, "the line should say where to get it")
     check(#line <= 255, "the line is too long for one chat message: " .. #line)
-    check(not sentChat, "the addon must not send chat by itself")
-    -- the newer name for the same call is used where the game has it
-    ChatFrameUtil = { OpenChat = function(text) opened[#opened + 1] = "new:" .. text end }
+    -- clicked: the press and the release both arrive, and it goes away just after
+    ad.scripts.PostClick(ad, "LeftButton", true)
+    check(ad:IsShown(), "the button went away before the release could count")
+    ad.scripts.PostClick(ad, "LeftButton", false)
+    sim.run(1)
+    check(not ad:IsShown(), "the button stayed after being clicked")
+    -- nobody clicks: it puts itself away
     SlashCmdList.WSGFOREVER("ad")
-    sim.run(0.2)
-    check((opened[2] or ""):find("^new:/") ~= nil, "the game's newer chat call was not used")
-    -- no way to open chat at all: the line is printed so it can still be typed
-    ChatFrameUtil, ChatFrame_OpenChat = nil, nil
+    sim.run(10)
+    check(ad:IsShown(), "the button went away too soon")
+    sim.run(11)
+    check(not ad:IsShown(), "the button never went away by itself")
+    -- in combat it cannot be shown or hidden: say so, and wait for the fight to end
+    sim.inCombat = true
     sim.printed = {}
     SlashCmdList.WSGFOREVER("ad")
-    local printed = table.concat(sim.printed, " ")
-    check(printed:find("CurseForge") ~= nil, "with no chat box to open, the line should be printed")
+    check(not ad:IsShown(), "the button was shown in combat")
+    check(table.concat(sim.printed, " "):find("Key Bindings") ~= nil, "in combat it should point at the key binding")
+    sim.inCombat = false
+    SlashCmdList.WSGFOREVER("ad")
+    sim.inCombat = true
+    ad.scripts.PostClick(ad, "LeftButton", false)
+    sim.run(2)
+    check(ad:IsShown(), "the button was hidden during combat")
+    sim.inCombat = false
+    sim.run(0.5)
+    check(not ad:IsShown(), "the button stayed after combat ended")
+    check(not sentChat, "the addon must not send chat by itself")
     SendChatMessage, C_ChatInfo.SendChatMessage = oldSend, oldInfoSend
     sim.printed = {}
 end)
