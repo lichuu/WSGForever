@@ -253,9 +253,11 @@ scenario("the history tab opens, shows the totals, and switches with the setting
     check(sim.showing("1 matches") ~= nil and sim.showing("1 won") ~= nil, "summary line missing")
     check(sim.showing("Warsong Gulch") ~= nil, "match row missing")
     check(sim.showing("Carrier health and drop timer") == nil, "settings tab still showing behind the history tab")
+    check(sim.showing("bad girls club") == nil, "the guild line belongs on the settings tab only")
     -- the settings tab hides the history, and /fc history again closes the window
     SlashCmdList.WSGFOREVER("options")
     check(sim.showing("1 won") == nil and sim.showing("Carrier health and drop timer") ~= nil, "switching to the settings tab failed")
+    check(sim.showing("made with love, by .*<bad girls club>") ~= nil, "the guild line is missing from the settings tab")
     SlashCmdList.WSGFOREVER("history")
     SlashCmdList.WSGFOREVER("history")
     check(sim.showing("1 won") == nil and sim.showing("Carrier health and drop timer") == nil, "window did not close")

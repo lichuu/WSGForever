@@ -372,7 +372,11 @@ local function BuildWindow()
         b:SetPoint("TOPLEFT", 0, -35)
         b:SetPoint("BOTTOMRIGHT")
     end
-    local settingsHeight = BuildPage(body.settings, PAD, -16) + 16
+    local settingsHeight = BuildPage(body.settings, PAD, -16) + 16 + 10
+    -- A line for the guild, at the foot of the settings tab.
+    local credit = body.settings:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    credit:SetPoint("BOTTOM", 0, 10)
+    credit:SetText("made with love, by |cff40ff40<bad girls club>|r")
     local historyHeight = GK.modules.History:BuildView(body.history, PAD, -16) + 16
     f:SetSize(PAGE_W, 35 + math.max(settingsHeight, historyHeight) + 8)
 
