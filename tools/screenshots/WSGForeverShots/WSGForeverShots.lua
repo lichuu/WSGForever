@@ -140,14 +140,19 @@ local function Step()
     if not stagedAt then
         if showing and (db.autoShots or 0) < MAX_SHOTS and now - lastShot > GAP
             and (Minutes(tab) or 0) >= 2 and Alive() then
-            local enemies, format, quality = _G.WSGForeverEnemies, GetCVar("screenshotFormat"), GetCVar("screenshotQuality")
-            local alpha = enemies and enemies:GetAlpha()
+            -- Out of the way for a second: the enemy list beside the tab, and
+            -- your target and focus frames, which often sit just below it.
+            local format, quality = GetCVar("screenshotFormat"), GetCVar("screenshotQuality")
+            local faded = {}
+            for _, name in ipairs({ "WSGForeverEnemies", "TargetFrame", "FocusFrame" }) do
+                local f = _G[name]
+                if f and f.GetAlpha then faded[f] = f:GetAlpha() f:SetAlpha(0) end
+            end
             undo = function()
-                if enemies and alpha then enemies:SetAlpha(alpha) end
+                for f, alpha in pairs(faded) do f:SetAlpha(alpha) end
                 if format then SetCVar("screenshotFormat", format) end
                 if quality then SetCVar("screenshotQuality", quality) end
             end
-            if enemies then enemies:SetAlpha(0) end
             WSGFShot.Stage("scoreboard-time")
             stagedAt = now
         end
