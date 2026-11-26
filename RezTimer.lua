@@ -5,10 +5,6 @@ local _, GK = ...
 -- rezInterval seconds later.
 
 local PREFIX = "WSGForeverRez"
-local START_OFFSET = {
-    ["Let the battle for Warsong Gulch begin!"] = 5,
-    ["The battle for Alterac Valley has begun!"] = 0,
-}
 
 local Rez = {}
 GK.RegisterModule("RezTimer", Rez)
@@ -83,9 +79,9 @@ end
 -- the message isn't one.
 local function StartOffset(msg)
     if type(msg) ~= "string" then return nil end
-    if START_OFFSET[msg] then return START_OFFSET[msg] end
-    local lower = msg:lower()
-    if lower:find("battle") and (lower:find("begin!") or lower:find("begun")) then
+    local exact = GK.L.startOffsets[msg]
+    if exact then return exact end
+    if GK.Heard(msg, "battle") and GK.Heard(msg, "begin") then
         return GK.InWSG() and 5 or 0
     end
 end

@@ -448,7 +448,7 @@ function History:Init()
             return
         elseif event == "CHAT_MSG_BG_SYSTEM_NEUTRAL" then
             local msg = GK.Plain(a1)
-            if type(msg) == "string" and msg:lower():find("beg[ua]n") then startedAt = startedAt or GetTime() end
+            if type(msg) == "string" and GK.Heard(msg, "started") then startedAt = startedAt or GetTime() end
         elseif event == "PVP_MATCH_COMPLETE" then
             -- The scoreboard can lag the result by a moment.
             if RequestBattlefieldScoreData then RequestBattlefieldScoreData() end

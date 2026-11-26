@@ -8,6 +8,7 @@
 ## IconTexture: Interface\Icons\INV_Misc_Rune_07
 
 Core.lua
+Locale.lua
 Callouts.lua
 Carriers.lua
 RezTimer.lua

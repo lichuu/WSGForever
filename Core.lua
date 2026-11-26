@@ -273,15 +273,24 @@ function GK.SetPowerBar(bar, unit)
     bar:SetValue(cur)
 end
 
+-- Reports an error the addon caught: a line in chat, and the error itself
+-- to the game's error handler, so the Lua error window (when it is turned
+-- on) and error collectors such as BugSack show it with its file and line.
+function GK.Report(what, err)
+    GK.Print("|cffff4f4f" .. what .. ":|r " .. tostring(err))
+    local handler = geterrorhandler and geterrorhandler()
+    if handler then pcall(handler, err) end
+end
+
 -- Wraps a script handler so an error can't flood the game: the first
--- error per handler is printed to chat, later ones are dropped.
+-- error per handler is reported, later ones are dropped.
 function GK.Safe(label, fn)
     local reported = false
     return function(...)
         local ok, err = pcall(fn, ...)
         if not ok and not reported then
             reported = true
-            GK.Print("|cffff4f4f" .. label .. " error (shown once):|r " .. tostring(err))
+            GK.Report(label .. " error (shown once)", err)
         end
     end
 end
@@ -386,10 +395,42 @@ function GK.Refresh()
         if mod.Refresh then
             -- One module failing shouldn't stop the others from updating.
             local ok, err = pcall(mod.Refresh, mod)
-            if not ok then GK.Print("|cffff4f4f" .. name .. " error:|r " .. tostring(err)) end
+            if not ok then GK.Report(name .. " error", err) end
         end
     end
 end
+
+-- Settings migrations ------------------------------------------------------
+
+-- A migration changes settings saved by an older version, once: a setting
+-- renamed or reshaped, or a default that changes for new installs only.
+-- WSGForeverDB.migrations records the ones that have run. A new install has
+-- nothing to migrate, so there they are all recorded without running.
+-- Register them in the order they should run; never reuse or rename an id.
+local migrations = {}
+
+function GK.RegisterMigration(id, fn)
+    migrations[#migrations + 1] = { id = id, fn = fn }
+end
+
+function GK.RunMigrations(db, fresh)
+    db.migrations = db.migrations or {}
+    for _, m in ipairs(migrations) do
+        if not db.migrations[m.id] then
+            if not fresh then
+                local ok, err = pcall(m.fn, db)
+                if not ok then GK.Report("Settings update " .. m.id .. " failed", err) end
+            end
+            db.migrations[m.id] = true
+        end
+    end
+end
+
+-- Older settings kept two sizes separately.
+GK.RegisterMigration("scalesTable", function(db)
+    if db.enemyScale ~= 1 and not db.scales.Enemies then db.scales.Enemies = db.enemyScale end
+    if db.calloutScale ~= 1 and not db.scales.Callouts then db.scales.Callouts = db.calloutScale end
+end)
 
 function GK.ShouldShowAll()
     return GK.testMode or not GK.db.locked
@@ -402,18 +443,17 @@ events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON then
-        WSGForeverDB = WSGForeverDB or {}
+        local fresh = type(WSGForeverDB) ~= "table" or next(WSGForeverDB) == nil
+        if fresh then WSGForeverDB = {} end
         for k, v in pairs(defaults) do
             if WSGForeverDB[k] == nil then WSGForeverDB[k] = (type(v) == "table") and {} or v end
         end
         GK.db = WSGForeverDB
-        -- Older settings kept two sizes separately.
-        if GK.db.enemyScale ~= 1 and not GK.db.scales.Enemies then GK.db.scales.Enemies = GK.db.enemyScale end
-        if GK.db.calloutScale ~= 1 and not GK.db.scales.Callouts then GK.db.scales.Callouts = GK.db.calloutScale end
+        GK.RunMigrations(GK.db, fresh)
         for name, mod in pairs(GK.modules) do
             if mod.Init then
                 local ok, err = pcall(mod.Init, mod)
-                if not ok then GK.Print("|cffff4f4f" .. name .. " failed to start:|r " .. tostring(err)) end
+                if not ok then GK.Report(name .. " failed to start", err) end
             end
         end
         GK.SetLocked(GK.db.locked)
@@ -422,7 +462,7 @@ events:SetScript("OnEvent", function(_, event, arg1)
         for name, mod in pairs(GK.modules) do
             if mod.OutOfCombat then
                 local ok, err = pcall(mod.OutOfCombat, mod)
-                if not ok then GK.Print("|cffff4f4f" .. name .. " error:|r " .. tostring(err)) end
+                if not ok then GK.Report(name .. " error", err) end
             end
         end
     elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
@@ -514,6 +554,40 @@ function GK.Advertise()
     end
     if InCombatLockdown() then GK.Print("The bar can't change in combat; it will update when the fight ends.") end
     GK.Refresh()
+end
+
+-- A bug report as plain text: the versions, the game language, where the
+-- player is and what the carrier tracking can see (what /fc debug prints),
+-- with the battleground messages the addon could not read on a language it
+-- has no phrases for. The settings window shows it in a box to copy.
+function GK.ReportText()
+    local lines = {}
+    local function add(text)
+        lines[#lines + 1] = (tostring(text):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+    end
+    add("WSGForever " .. GK.Version())
+    local version, build
+    if GetBuildInfo then version, build = GetBuildInfo() end
+    add(string.format("Game: %s (%s), language %s%s", tostring(version or "?"), tostring(build or "?"),
+        tostring(GK.locale), GK.localeKnown and "" or " (no translation yet)"))
+    local where, instanceType, id = InstanceInfo()
+    add(string.format("Where: %s (%s, map %s)", tostring(where), tostring(instanceType), tostring(id)))
+    -- The modules say what they see through GK.Print: collect it for a moment.
+    local toChat = GK.Print
+    GK.Print = function(...)
+        local parts = {}
+        for i = 1, select("#", ...) do parts[i] = tostring((select(i, ...))) end
+        add(table.concat(parts, " "))
+    end
+    for _, name in ipairs({ "BlizzCarriers", "Carriers" }) do
+        local m = GK.modules[name]
+        if m and m.Debug then
+            local ok, err = pcall(m.Debug, m)
+            if not ok then add(name .. " could not report: " .. tostring(err)) end
+        end
+    end
+    GK.Print = toChat
+    return table.concat(lines, "\n")
 end
 
 local function Help()

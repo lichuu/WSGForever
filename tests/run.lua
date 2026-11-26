@@ -821,6 +821,116 @@ scenario("the group version check hears others, ignores itself, and mentions a n
     sim.printed = {}
 end)
 
+-- A made-up language, to check the phrases are read from Locale.lua and
+-- not from English left in the modules.
+GK.AddLocale("xxXX", {
+    allianceFlag = { "blue banner" },
+    hordeFlag = { "red banner" },
+    dropped = { "let go by" },
+    captured = { "took home the" },
+    returned = { "brought back" },
+    flagsReset = { "banners are home" },
+    pickedUpBy = "lifted by (.-)!?$",
+})
+
+scenario("another game language is read through its own phrases", function()
+    local ok, err = pcall(function()
+        GK.UseLocale("xxXX")
+        say("The Blue Banner was lifted by Cheat Jump!")
+        sim.run(1)
+        check(not dropped(), "showed Dropped after a pick-up")
+        say("The Blue Banner was let go by Cheat Jump!")
+        sim.run(0.5)
+        check(dropped() ~= nil, "no countdown after a drop said in the other language")
+        say("The banners are home.")
+        sim.run(0.5)
+        check(not dropped(), "countdown still showing after the flags went home")
+        check(GK.db.unreadMessages == nil, "noted unread messages on a language that has phrases")
+    end)
+    GK.UseLocale("enUS")
+    if not ok then error(err, 0) end
+end)
+
+scenario("a language with no phrases keeps what it could not read for /fc debug", function()
+    local ok, err = pcall(function()
+        GK.UseLocale("zzZZ")
+        say("Die Flagge wurde fallen gelassen!")
+        say("Die Flagge wurde fallen gelassen!")
+        sim.run(0.5)
+        check(not dropped(), "read a message it has no phrases for")
+        local list = GK.db.unreadMessages
+        check(list and #list == 1, "expected one unread message kept, got " .. tostring(list and #list))
+        sim.printed = {}
+        SlashCmdList.WSGFOREVER("debug")
+        local out = table.concat(sim.printed, " | ")
+        check(out:find("zzZZ has no translation yet", 1, true) ~= nil, "debug did not say the language is missing: " .. out)
+        check(out:find("fallen gelassen", 1, true) ~= nil, "debug did not list the unread message")
+    end)
+    GK.UseLocale("enUS")
+    GK.db.unreadMessages = nil
+    sim.printed = {}
+    if not ok then error(err, 0) end
+end)
+
+scenario("Report a problem shows a report to copy, with what could not be read", function()
+    local ok, err = pcall(function()
+        GK.UseLocale("zzZZ")
+        say("Die Flagge wurde fallen gelassen!")
+        sim.run(0.5)
+        sim.printed = {}
+        local chat = GK.Print
+        GK.modules.Options:ShowReport()
+        check(GK.Print == chat, "chat output was not put back after the report was taken")
+        check(#sim.printed == 0, "taking the report printed to chat: " .. table.concat(sim.printed, " | "))
+        local window = WSGForeverReport
+        check(window and window.shown, "the report window did not open")
+        local text = window and window.report.fixed or ""
+        check(text:find("^WSGForever ") ~= nil, "report does not start with the version: " .. text:sub(1, 40))
+        check(text:find("language zzZZ (no translation yet)", 1, true) ~= nil, "report does not give the game language")
+        check(text:find("Alliance flag: holder", 1, true) ~= nil, "report has no carrier state")
+        check(text:find("fallen gelassen", 1, true) ~= nil, "report does not list the unread message")
+        check(not text:find("|c", 1, true), "report still has colour codes")
+        check(window.link.fixed:find("^https://github.com/lichuu/WSGForever/issues") ~= nil, "no page to post the report on")
+    end)
+    GK.UseLocale("enUS")
+    GK.db.unreadMessages = nil
+    sim.printed = {}
+    if not ok then error(err, 0) end
+end)
+
+scenario("settings migrations run once on old settings and never on a new install", function()
+    local runs = 0
+    GK.RegisterMigration("testOnly", function(db) runs = runs + 1 db.touched = true end)
+    local old = { enemyScale = 1.5, calloutScale = 1, scales = {} }
+    GK.RunMigrations(old, false)
+    check(old.scales.Enemies == 1.5, "the old enemy size was not carried over")
+    check(old.scales.Callouts == nil, "a default callout size was carried over")
+    check(runs == 1 and old.touched, "the migration did not run on old settings")
+    GK.RunMigrations(old, false)
+    check(runs == 1, "the migration ran twice")
+    local new = { enemyScale = 1, calloutScale = 1, scales = {} }
+    GK.RunMigrations(new, true)
+    check(runs == 1 and not new.touched, "the migration ran on a new install")
+    check(new.migrations.testOnly and new.migrations.scalesTable, "a new install did not record the migrations")
+    -- The settings the addon is running on were recorded when it loaded.
+    check(GK.db.migrations and GK.db.migrations.scalesTable, "the loaded settings have no migration record")
+    GK.RunMigrations(GK.db, false)
+end)
+
+scenario("a caught error also reaches the game's error handler, once per handler", function()
+    local got = {}
+    local before = geterrorhandler
+    geterrorhandler = function() return function(err) got[#got + 1] = err end end
+    local handler = GK.Safe("Test handler", function() error("boom") end)
+    local ok = pcall(function() handler() handler() end)
+    geterrorhandler = before
+    check(ok, "the wrapped handler raised")
+    check(#got == 1 and tostring(got[1]):find("boom") ~= nil, "error handler calls: " .. #got)
+    local said = table.concat(sim.printed, " | ")
+    check(said:find("Test handler error %(shown once%)") ~= nil, "no line in chat: " .. said)
+    sim.printed = {}
+end)
+
 -- Release pages show RELEASE_NOTES.md, which must be the newest version's notes.
 current = "release notes"
 count = count + 1
