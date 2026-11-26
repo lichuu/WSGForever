@@ -294,6 +294,9 @@ local function BuildPage(parent, x, y)
     local history = MakeButton(parent, third, function() Options:Open("history") end)
     history:SetText("Match history")
     history:SetPoint("TOPLEFT", x, y)
+    local report = MakeButton(parent, third, function() Options:ShowReport() end)
+    report:SetText("Report a problem")
+    report:SetPoint("LEFT", history, "RIGHT", 8, 0)
     y = y - 32
     local hint = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     hint:SetPoint("TOPLEFT", x, y)
@@ -316,6 +319,120 @@ function Options:Sync()
         page.move:SetText(GK.db.locked and "Move and resize frames" or "Lock frames")
         page.test:SetText(GK.testMode and "End preview" or "Preview")
     end
+end
+
+-- Report a problem -------------------------------------------------------
+
+-- The game gives addons no clipboard and opens no web pages, so the report
+-- and the page to post it on each sit in a box to copy from: click the box,
+-- Ctrl+C. The boxes can't be edited; typing in one puts its text back.
+local ISSUES_URL = "https://github.com/lichuu/WSGForever/issues/new"
+local REPORT_W, REPORT_LINES_H = 460, 190
+local reportWindow
+
+local function MakeCopyBox(parent, kind)
+    local e = CreateFrame("EditBox", nil, parent)
+    e:SetAutoFocus(false)
+    e:SetFontObject(ChatFontNormal)
+    e.fixed = ""
+    function e:SetFixed(text)
+        self.fixed = text
+        self:SetText(text)
+        self:SetCursorPosition(0)
+    end
+    e:SetScript("OnTextChanged", function(self, byPlayer)
+        if byPlayer then
+            self:SetText(self.fixed)
+            self:HighlightText()
+        end
+    end)
+    e:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
+    e:SetScript("OnEditFocusLost", function(self) self:HighlightText(0, 0) end)
+    e:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    if kind == "lines" then e:SetMultiLine(true) end
+    return e
+end
+
+local function MakeWell(parent, width, height)
+    local well = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    well:SetSize(width, height)
+    well:SetBackdrop({ bgFile = FLAT, edgeFile = FLAT, edgeSize = 1 })
+    well:SetBackdropColor(0.04, 0.04, 0.05, 1)
+    well:SetBackdropBorderColor(0.42, 0.42, 0.46, 1)
+    return well
+end
+
+local function BuildReportWindow()
+    local f = CreateFrame("Frame", "WSGForeverReport", UIParent, "BackdropTemplate")
+    f:SetFrameStrata("FULLSCREEN_DIALOG")
+    f:SetBackdrop({ bgFile = FLAT, edgeFile = FLAT, edgeSize = 1 })
+    f:SetBackdropColor(0.06, 0.06, 0.07, 0.98)
+    f:SetBackdropBorderColor(0, 0, 0, 1)
+    f:SetPoint("CENTER", 0, 40)
+    f:SetMovable(true)
+    f:SetClampedToScreen(true)
+    f:EnableMouse(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", f.StartMoving)
+    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    f:Hide()
+    tinsert(UISpecialFrames, "WSGForeverReport") -- Escape closes it
+
+    local inner = REPORT_W - PAD * 2
+    local y = -PAD
+    local function Line(font, text)
+        local fs = f:CreateFontString(nil, "OVERLAY", font)
+        fs:SetPoint("TOPLEFT", PAD, y)
+        fs:SetWidth(inner)
+        fs:SetJustifyH("LEFT")
+        fs:SetText(text)
+        return fs
+    end
+    Line("GameFontNormalLarge", "Report a problem")
+    y = y - 30
+    Line("GameFontHighlightSmall", "1. Click in this box and press Ctrl+C to copy your report.")
+    y = y - 18
+
+    local well = MakeWell(f, inner, REPORT_LINES_H)
+    well:SetPoint("TOPLEFT", PAD, y)
+    local scroll = CreateFrame("ScrollFrame", nil, well, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 8, -6)
+    scroll:SetPoint("BOTTOMRIGHT", -28, 6)
+    f.report = MakeCopyBox(scroll, "lines")
+    f.report:SetWidth(inner - 36)
+    scroll:SetScrollChild(f.report)
+    well:EnableMouse(true)
+    well:SetScript("OnMouseUp", function() f.report:SetFocus() end)
+    y = y - REPORT_LINES_H - 12
+
+    Line("GameFontHighlightSmall",
+        "2. Open this page in your web browser, paste the report there and say what went wrong.")
+    y = y - 30
+    local linkWell = MakeWell(f, inner, 26)
+    linkWell:SetPoint("TOPLEFT", PAD, y)
+    f.link = MakeCopyBox(linkWell, "line")
+    f.link:SetPoint("TOPLEFT", 8, 0)
+    f.link:SetPoint("BOTTOMRIGHT", -8, 0)
+    y = y - 26 - 12
+
+    local close = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    close:SetSize(100, 24)
+    close:SetPoint("TOPRIGHT", -PAD, y)
+    close:SetText("Close")
+    close:SetScript("OnClick", function() f:Hide() end)
+    y = y - 24
+
+    f:SetSize(REPORT_W, -y + PAD)
+    return f
+end
+
+-- Opens the report window with a report taken now.
+function Options:ShowReport()
+    reportWindow = reportWindow or BuildReportWindow()
+    reportWindow.report:SetFixed(GK.ReportText())
+    reportWindow.link:SetFixed(ISSUES_URL)
+    reportWindow:Show()
+    reportWindow:Raise()
 end
 
 -- Its own window -----------------------------------------------------------

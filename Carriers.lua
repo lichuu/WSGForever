@@ -158,8 +158,8 @@ local function FindWidgets()
     for _, child in ipairs({ container:GetChildren() }) do
         local tip = GK.Plain(child.tooltip)
         if child:IsShown() and type(tip) == "string" then
-            if tip:find("Horde flag") then found.Alliance = child
-            elseif tip:find("Alliance flag") then found.Horde = child end
+            if tip:find(GK.L.widgetHordeFlag, 1, true) then found.Alliance = child
+            elseif tip:find(GK.L.widgetAllianceFlag, 1, true) then found.Horde = child end
         end
     end
     return found
@@ -567,31 +567,31 @@ end
 -- Events ---------------------------------------------------------------
 
 local function FlagFromMsg(msg)
-    local lower = msg:lower()
-    if lower:find("alliance flag") then return "Alliance" end
-    if lower:find("horde flag") then return "Horde" end
+    if GK.Heard(msg, "allianceFlag") then return "Alliance" end
+    if GK.Heard(msg, "hordeFlag") then return "Horde" end
 end
 
 local function OnSystemMessage(msg)
     msg = GK.Plain(msg)
     if type(msg) ~= "string" then return end
-    local lower = msg:lower()
-    if lower:find("placed at their bases") then Reset() return end
+    if GK.Heard(msg, "flagsReset") then Reset() return end
     local flag = FlagFromMsg(msg)
-    if not flag then return end
+    if not flag then GK.NoteUnread(msg) return end
     local s = state[flag]
-    local picker = msg:match("[Pp]icked up by (.-)!?$")
+    local picker = msg:match(GK.L.pickedUpBy)
     if picker then
         s.holder, s.droppedAt, s.lostAt = picker, nil, nil
         if RequestBattlefieldScoreData then RequestBattlefieldScoreData() end
-    elseif lower:find("dropped by") then
+    elseif GK.Heard(msg, "dropped") then
         s.holder, s.unit, s.fromSlot, s.lostAt, s.droppedAt = nil, nil, nil, nil, GetTime()
         NoteDrop(flag, "chat")
-    elseif lower:find("captured the") then
+    elseif GK.Heard(msg, "captured") then
         s.holder, s.unit, s.fromSlot = nil, nil, nil
         OnCapture(GetTime())
-    elseif lower:find("returned") then
+    elseif GK.Heard(msg, "returned") then
         s.holder, s.unit, s.fromSlot, s.lostAt, s.droppedAt = nil, nil, nil, nil, nil
+    else
+        GK.NoteUnread(msg)
     end
     ApplyMacros()
 end
@@ -671,6 +671,7 @@ function FC:Debug()
         GK.db.dropLog and #GK.db.dropLog or 0))
     GK.Print(string.format("captures read: %s, flags spawn in: %s", tostring(TotalCaptures()),
         spawnAt and string.format("%.0fs", spawnAt - GetTime()) or "no"))
+    GK.PrintUnread()
 end
 
 function FC:OutOfCombat()

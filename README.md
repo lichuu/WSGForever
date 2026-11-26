@@ -45,7 +45,7 @@ Teammates show as larger dots in their class colours.
 When your queue pops, a countdown under the ready window shows how long is left to enter. An optional ding plays even with sound effects muted.
 
 ### Settings
-A minimap button opens a settings window with every option, and a second tab for match history. It is also under Options > AddOns.
+A minimap button opens a settings window with every option, and a second tab for match history. It is also under Options > AddOns. Found a bug? **Report a problem** on that page gives you a ready-made report to copy and the page to post it on.
 
 ### Key bindings
 Every callout can be bound to a key in the game's Key Bindings menu, under WSGForever, and so can targeting or pinging the enemy flag carrier and pinging your own.

@@ -305,8 +305,7 @@ function Timer:Init()
             -- "Let the battle for Warsong Gulch begin!" / "The battle has begun!"
             msg = GK.Plain(msg)
             if type(msg) == "string" and GK.InBattleground() then
-                local lower = msg:lower()
-                if lower:find("begun") or lower:find("begin!") then GatesOpened() end
+                if GK.Heard(msg, "begin") then GatesOpened() end
             end
         end
     end))
